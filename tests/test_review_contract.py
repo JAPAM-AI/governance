@@ -582,6 +582,23 @@ def test_bootstrap_known_lanes_all_yield_ready_for_known_repo():
         assert out["status"] == "READY", f"lane={lane} did not yield READY"
 
 
+def test_bootstrap_known_non_ai_operations_repo_does_not_warn_unknown():
+    """For known JAPAM-AI repos OTHER than Ai_operations (e.g. governance,
+    dqe-store), task_structure_expectations must NOT warn that the repo is
+    unknown — the guidance must remain semantically correct."""
+    for repo in ("JAPAM-AI/governance", "JAPAM-AI/dqe-store",
+                 "JAPAM-AI/dqecoverage", "JAPAM-AI/japam-trading"):
+        out = bootstrap(repo, "claude_code", {})
+        assert out["status"] == "READY", f"known repo {repo} did not yield READY"
+        joined = " ".join(out["task_structure_expectations"]).lower()
+        assert "not in japam-ai known set" not in joined, (
+            f"task_structure_expectations for known repo {repo} contradicts itself: "
+            f"says 'not in JAPAM-AI known set' for a known repo"
+        )
+        # Should still mention task_class / contract awareness
+        assert "task_class" in joined
+
+
 # ── examples roundtrip ────────────────────────────────────────────────
 
 def test_examples_match_review_output():

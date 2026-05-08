@@ -335,9 +335,11 @@
         "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
       ],
       "task_structure_expectations": [
-        "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
-        "Generic JAPAM-AI guidance: declare task_class, side_effects, and declared_impact in the task envelope.",
-        "If the repo is in fact a JAPAM-AI repo not yet in the closed set, escalate to add it via ADR + schema bump in JAPAM-AI/governance."
+        "Declare task_class, side_effects, and declared_impact in the task envelope.",
+        "AI_Operation contract task_classes (for cross-repo work that touches orchestration): ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard'].",
+        "Observed-but-not-yet-in-contract: ['chat', 'deep_batch'] \u2014 these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
+        "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
+        "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos."
       ],
       "git_expectations": [
         "Branch prefix: feature/, fix/, docs/, chore/, or hotfix/ per CONTRIBUTING.md.",

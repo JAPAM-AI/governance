@@ -92,7 +92,23 @@ def _ai_operation_task_structure() -> list[str]:
     ]
 
 
-def _generic_task_structure() -> list[str]:
+def _known_japam_ai_task_structure() -> list[str]:
+    """For known JAPAM-AI repos OTHER than Ai_operations.
+
+    These repos do not own the AI_Operation contract enum directly, but
+    share the JAPAM-AI task-envelope expectations.
+    """
+    return [
+        "Declare task_class, side_effects, and declared_impact in the task envelope.",
+        f"AI_Operation contract task_classes (for cross-repo work that touches orchestration): {sorted(KNOWN_CONTRACT_CLASSES)}.",
+        f"Observed-but-not-yet-in-contract: {sorted(EXTENDED_BRIEF_CLASSES)} — these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
+        "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
+        "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos.",
+    ]
+
+
+def _unknown_repo_task_structure() -> list[str]:
+    """For repos NOT in the JAPAM-AI known set (status=WARN)."""
     return [
         "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
         "Generic JAPAM-AI guidance: declare task_class, side_effects, and declared_impact in the task envelope.",
@@ -171,11 +187,13 @@ def bootstrap(repo: Any, lane: Any, task_context: Any = None) -> dict:
     Args:
         repo: e.g. "JAPAM-AI/Ai_operations". Non-string -> "".
         lane: one of {"worker", "claude_code", "codex"}. Non-string -> "".
-        task_context: optional dict (currently used only to decide
-            recommended_next_action wording; never raises if non-dict).
+        task_context: optional dict reserved for future per-task hints
+            (e.g. task_id, task_type). v1 of bootstrap does NOT branch
+            on task_context — output is a function of repo + lane only.
+            Non-dict values are coerced to {} and never raise.
 
     Returns:
-        dict with the 13 keys defined by ALLOWED_BOOTSTRAP_STATUS docs.
+        dict with the 13 documented keys (see _REQUIRED_OUTPUT_KEYS).
     """
     repo_s = repo if isinstance(repo, str) else ""
     lane_s = lane if isinstance(lane, str) else ""
@@ -195,12 +213,12 @@ def bootstrap(repo: Any, lane: Any, task_context: Any = None) -> dict:
         mirror = _ai_operation_mirror_updates()
         when_review = _ai_operation_when_to_call_review()
     elif is_known_repo:
-        task_struct = _generic_task_structure()
+        task_struct = _known_japam_ai_task_structure()
         orch = _ai_operation_orchestration()  # known JAPAM-AI repo: same lanes
         mirror = _generic_mirror_updates()
         when_review = _generic_when_to_call_review()
     else:
-        task_struct = _generic_task_structure()
+        task_struct = _unknown_repo_task_structure()
         orch = _generic_orchestration()
         mirror = _generic_mirror_updates()
         when_review = _generic_when_to_call_review()
