@@ -1,6 +1,13 @@
-# GUIDANCE.md — the rules `prompt_guidance.review` encodes
+# GUIDANCE.md — the rules `prompt_guidance` encodes
 
-This is the human-readable form of the deterministic logic in `prompt_guidance/review.py`. If you read only this document and follow it, your output will be consistent with what the tool would have recommended.
+This is the human-readable form of the deterministic logic in `prompt_guidance/review.py` and `prompt_guidance/bootstrap.py`. If you read only this document and follow it, your output will be consistent with what the tools would have recommended.
+
+## Two functions, one operating contract
+
+- `prompt_guidance.bootstrap(repo, lane, task_context)` — returns first-window startup guidance: the rules, expectations, and non-goals that hold for every action in the session. Call **once at the start** of a task / session.
+- `prompt_guidance.review(prompt, context)` — returns per-action guidance: status, risk, missing fields, mirror targets, suggested follow-up PR. Call **before each risky action** (PR creation, architecture-changing edit, secret-touching work, new task_class).
+
+The PR-comment bot is a backstop. Bootstrap and review are the primary entry points.
 
 ## Inputs the tool considers
 

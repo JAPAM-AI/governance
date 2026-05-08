@@ -20,6 +20,15 @@ from prompt_guidance.review import (  # noqa: E402
     KNOWN_REPOSITORIES,
 )
 import scripts.review_pr as review_pr  # noqa: E402
+from prompt_guidance.bootstrap import bootstrap, KNOWN_LANES  # noqa: E402
+
+REQUIRED_BOOTSTRAP_KEYS = {
+    "guidance_version", "repo", "lane", "status",
+    "applicable_governance_rules", "task_structure_expectations",
+    "git_expectations", "orchestration_expectations",
+    "mirror_update_expectations", "when_to_call_review",
+    "when_to_escalate", "non_goals", "recommended_next_action",
+}
 
 
 REQUIRED_OUTPUT_KEYS = {
@@ -461,16 +470,136 @@ def test_upsert_comment_creates_new_when_id_none(monkeypatch):
     assert "48" in args
 
 
+# ── bootstrap (first-window governance) ──────────────────────────────
+
+def test_bootstrap_returns_all_required_keys():
+    out = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    assert set(out.keys()) == REQUIRED_BOOTSTRAP_KEYS
+
+
+def test_bootstrap_returns_all_required_keys_for_unknown_repo():
+    out = bootstrap("some-other/repo", "worker", {})
+    assert set(out.keys()) == REQUIRED_BOOTSTRAP_KEYS
+
+
+def test_bootstrap_is_deterministic():
+    a = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {"task_id": "cc-1"})
+    b = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {"task_id": "cc-1"})
+    assert a == b
+    # serialised form is also identical
+    import json as _json
+    assert _json.dumps(a, sort_keys=True) == _json.dumps(b, sort_keys=True)
+
+
+def test_bootstrap_does_not_raise_on_garbage_input():
+    # Each call must not raise; output dict must always have required keys
+    for repo, lane, ctx in [
+        (None, None, None),
+        (123, [], "not-a-dict"),
+        ("", "", {}),
+        ({"weird": "shape"}, 999, []),
+    ]:
+        out = bootstrap(repo, lane, ctx)
+        assert isinstance(out, dict)
+        assert set(out.keys()) == REQUIRED_BOOTSTRAP_KEYS
+
+
+def test_bootstrap_ai_operations_includes_specific_guidance():
+    out = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    assert out["status"] == "READY"
+    assert out["repo"] == "JAPAM-AI/Ai_operations"
+    assert out["lane"] == "claude_code"
+    # Must mention task_class and the contract enum
+    joined = " ".join(out["task_structure_expectations"])
+    assert "task_class" in joined
+    assert "deep_batch" in joined or "chat" in joined  # mention drift class
+    # Mirror guidance must mention the contract path or schema
+    mirror = " ".join(out["mirror_update_expectations"])
+    assert "task_class" in mirror or "task.schema.json" in mirror
+
+
+def test_bootstrap_unknown_repo_returns_warn():
+    out = bootstrap("acme/foo", "claude_code", {})
+    assert out["status"] == "WARN"
+    # Output is still useful (non-empty)
+    assert len(out["applicable_governance_rules"]) > 0
+    assert len(out["task_structure_expectations"]) > 0
+    # Recommended action explicitly mentions verifying the repo
+    assert "repo" in out["recommended_next_action"].lower() or "verify" in out["recommended_next_action"].lower()
+
+
+def test_bootstrap_unknown_lane_returns_warn():
+    out = bootstrap("JAPAM-AI/Ai_operations", "schedule_v2", {})
+    assert out["status"] == "WARN"
+    # The orchestration block must call out the unknown lane
+    joined = " ".join(out["orchestration_expectations"])
+    assert "schedule_v2" in joined or "not a known governed lane" in joined
+
+
+def test_bootstrap_recommended_action_is_a_string():
+    """Even WARN cases must return a non-empty string action."""
+    for status_ctx in [
+        ("JAPAM-AI/Ai_operations", "claude_code"),  # READY
+        ("acme/foo", "claude_code"),                # WARN unknown repo
+        ("JAPAM-AI/Ai_operations", "weird"),        # WARN unknown lane
+        ("acme/foo", "weird"),                      # WARN both
+        ("", ""),                                   # WARN both empty
+    ]:
+        out = bootstrap(*status_ctx, {})
+        assert isinstance(out["recommended_next_action"], str)
+        assert out["recommended_next_action"].strip()
+
+
+def test_bootstrap_does_not_call_review_internally(monkeypatch):
+    """bootstrap and review are independent surfaces."""
+    import importlib
+    review_mod = importlib.import_module("prompt_guidance.review")
+    calls = {"count": 0}
+
+    def _track(*args, **kwargs):
+        calls["count"] += 1
+        return {}
+
+    monkeypatch.setattr(review_mod, "review", _track)
+    bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    assert calls["count"] == 0, f"bootstrap unexpectedly called review() {calls['count']} times"
+
+
+def test_bootstrap_non_goals_match_documented_invariants():
+    """non_goals must enumerate the canonical hard-noes."""
+    out = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    joined = " ".join(out["non_goals"]).lower()
+    for needle in ("blocking", "queue", "worker", "auto-pr", "auto-merge"):
+        # accept either direct mention or a reasonable variant
+        assert any(n in joined for n in (needle, needle.replace("-", " "))), (
+            f"non_goals missing concept: {needle}"
+        )
+
+
+def test_bootstrap_known_lanes_all_yield_ready_for_known_repo():
+    for lane in sorted(KNOWN_LANES):
+        out = bootstrap("JAPAM-AI/Ai_operations", lane, {})
+        assert out["status"] == "READY", f"lane={lane} did not yield READY"
+
+
 # ── examples roundtrip ────────────────────────────────────────────────
 
 def test_examples_match_review_output():
+    """Examples are byte-identical to live function output. Handles
+    BOTH review-shaped examples (input has 'prompt') and bootstrap-
+    shaped examples (input has 'repo' + 'lane')."""
     examples_path = _ROOT / "examples" / "review_examples.json"
     if not examples_path.exists():
-        return  # examples are generated at build time; skip if absent
+        return  # generated at build time
     data = json.loads(examples_path.read_text())
     for name, pair in data.items():
-        actual = review(pair["input"]["prompt"], pair["input"].get("context"))
+        inp = pair["input"]
         expected = pair["output"]
+        if "prompt" in inp:
+            actual = review(inp["prompt"], inp.get("context"))
+        else:
+            actual = bootstrap(inp.get("repo"), inp.get("lane"),
+                               inp.get("task_context"))
         assert actual == expected, (
-            f"example {name} drifted from review() output"
+            f"example {name} drifted from live function output"
         )

@@ -177,5 +177,269 @@
       "suggested_pr_title": "",
       "suggested_pr_scope": ""
     }
+  },
+  "5_bootstrap_ai_operations_claude_code_ready": {
+    "input": {
+      "repo": "JAPAM-AI/Ai_operations",
+      "lane": "claude_code",
+      "task_context": {
+        "task_id": "cc-example",
+        "task_type": "docs_update"
+      }
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "repo": "JAPAM-AI/Ai_operations",
+      "lane": "claude_code",
+      "status": "READY",
+      "applicable_governance_rules": [
+        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
+        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
+        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
+        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+      ],
+      "task_structure_expectations": [
+        "Declare task_class explicitly for scheduled / task / agent / pr work.",
+        "Known contract task_classes: ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard'].",
+        "Observed-but-not-yet-in-contract: ['chat', 'deep_batch'] \u2014 these DRIFT from the contract enum until ADR + schema lands.",
+        "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
+        "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos.",
+        "task_id: governed claude_code lane uses cc-* prefix (8-char hex); worker uses lt-*; codex uses lt-qc-*."
+      ],
+      "git_expectations": [
+        "Branch prefix: feature/, fix/, docs/, chore/, or hotfix/ per CONTRIBUTING.md.",
+        "PR body sections expected when impact is non-trivial: Summary, Architecture impact, Validation evidence, Rollback notes, Mirror updates.",
+        "Side-effects involving database/github/secrets require explicit rollback notes."
+      ],
+      "orchestration_expectations": [
+        "Lane choice: 'worker' for CTO worker tasks; 'claude_code' for in-conversation execution; 'codex' for Codex QC review.",
+        "Changes to orchestration / workers / task_schema / MCP tools / queues / routing / circuit-breakers / self-healing trigger mirror update guidance.",
+        "Pause-gates after substantive change require operator review before merge.",
+        "Long-running claude_code work hits the DurableQueue 10-minute lease cap; split into continuation cc-* tasks."
+      ],
+      "mirror_update_expectations": [
+        "task_class drift (deep_batch / chat) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
+        "Schema-touching changes likely need a follow-up ADR + schema bump in Ai_operations contracts/.",
+        "Worker / orchestration / governance-doc changes \u2192 mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
+        "Cross-repo work (other JAPAM-AI repos) \u2192 consult prompt_guidance.review's recommended_repositories field."
+      ],
+      "when_to_call_review": [
+        "Before opening any PR.",
+        "Before any task whose side_effects exceed {none, filesystem}.",
+        "Before architecture-changing edits (schema, contracts, services, packages, MCP tools).",
+        "Before suggesting a new task_class or task_type.",
+        "Before risky execution touching secrets / database / github."
+      ],
+      "when_to_escalate": [
+        "If review returns risk=HIGH and you do not have explicit operator approval.",
+        "If review returns missing_fields you cannot fill from the task context.",
+        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
+        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+      ],
+      "non_goals": [
+        "No blocking behavior.",
+        "No queue admission hooks.",
+        "No worker hooks.",
+        "No dashboard, database, registry, or rules engine.",
+        "No auto-PR creation, auto-push, auto-commit, or auto-merge.",
+        "No mutation of runtime state.",
+        "No governance-owned task lookup; agents should consult AI_Operation / DQE / OpenClaw for task state."
+      ],
+      "recommended_next_action": "Proceed with task. Call prompt_guidance.review(prompt, context) before risky execution, PR creation, or architecture-changing work. Treat WARN as guidance, not failure."
+    }
+  },
+  "6_bootstrap_unknown_repo_warn": {
+    "input": {
+      "repo": "acme/foo",
+      "lane": "claude_code",
+      "task_context": {}
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "repo": "acme/foo",
+      "lane": "claude_code",
+      "status": "WARN",
+      "applicable_governance_rules": [
+        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
+        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
+        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
+        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+      ],
+      "task_structure_expectations": [
+        "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
+        "Generic JAPAM-AI guidance: declare task_class, side_effects, and declared_impact in the task envelope.",
+        "If the repo is in fact a JAPAM-AI repo not yet in the closed set, escalate to add it via ADR + schema bump in JAPAM-AI/governance."
+      ],
+      "git_expectations": [
+        "Branch prefix: feature/, fix/, docs/, chore/, or hotfix/ per CONTRIBUTING.md.",
+        "PR body sections expected when impact is non-trivial: Summary, Architecture impact, Validation evidence, Rollback notes, Mirror updates.",
+        "Side-effects involving database/github/secrets require explicit rollback notes."
+      ],
+      "orchestration_expectations": [
+        "Lane should be one of: worker, claude_code, codex (the governed three-lane router).",
+        "Verify lane and orchestration expectations against the task context before dispatching work."
+      ],
+      "mirror_update_expectations": [
+        "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
+        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+      ],
+      "when_to_call_review": [
+        "Before opening any PR.",
+        "Before any task whose side_effects exceed {none, filesystem}.",
+        "Before architecture-changing edits."
+      ],
+      "when_to_escalate": [
+        "If review returns risk=HIGH and you do not have explicit operator approval.",
+        "If review returns missing_fields you cannot fill from the task context.",
+        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
+        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+      ],
+      "non_goals": [
+        "No blocking behavior.",
+        "No queue admission hooks.",
+        "No worker hooks.",
+        "No dashboard, database, registry, or rules engine.",
+        "No auto-PR creation, auto-push, auto-commit, or auto-merge.",
+        "No mutation of runtime state.",
+        "No governance-owned task lookup; agents should consult AI_Operation / DQE / OpenClaw for task state."
+      ],
+      "recommended_next_action": "Verify the repo string 'acme/foo'. The closed set is ['JAPAM-AI/Ai_operations', 'JAPAM-AI/dqe-store', 'JAPAM-AI/dqecoverage', 'JAPAM-AI/governance', 'JAPAM-AI/japam-trading']. If the repo is genuinely new, escalate via ADR + schema bump in JAPAM-AI/governance before proceeding with substantive work."
+    }
+  },
+  "7_bootstrap_unknown_lane_warn": {
+    "input": {
+      "repo": "JAPAM-AI/governance",
+      "lane": "schedule_v2",
+      "task_context": {}
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "repo": "JAPAM-AI/governance",
+      "lane": "schedule_v2",
+      "status": "WARN",
+      "applicable_governance_rules": [
+        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
+        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
+        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
+        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+      ],
+      "task_structure_expectations": [
+        "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
+        "Generic JAPAM-AI guidance: declare task_class, side_effects, and declared_impact in the task envelope.",
+        "If the repo is in fact a JAPAM-AI repo not yet in the closed set, escalate to add it via ADR + schema bump in JAPAM-AI/governance."
+      ],
+      "git_expectations": [
+        "Branch prefix: feature/, fix/, docs/, chore/, or hotfix/ per CONTRIBUTING.md.",
+        "PR body sections expected when impact is non-trivial: Summary, Architecture impact, Validation evidence, Rollback notes, Mirror updates.",
+        "Side-effects involving database/github/secrets require explicit rollback notes."
+      ],
+      "orchestration_expectations": [
+        "Lane choice: 'worker' for CTO worker tasks; 'claude_code' for in-conversation execution; 'codex' for Codex QC review.",
+        "Changes to orchestration / workers / task_schema / MCP tools / queues / routing / circuit-breakers / self-healing trigger mirror update guidance.",
+        "Pause-gates after substantive change require operator review before merge.",
+        "Long-running claude_code work hits the DurableQueue 10-minute lease cap; split into continuation cc-* tasks.",
+        "Lane 'schedule_v2' is not a known governed lane (['claude_code', 'codex', 'worker']); verify the task context before dispatching."
+      ],
+      "mirror_update_expectations": [
+        "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
+        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+      ],
+      "when_to_call_review": [
+        "Before opening any PR.",
+        "Before any task whose side_effects exceed {none, filesystem}.",
+        "Before architecture-changing edits."
+      ],
+      "when_to_escalate": [
+        "If review returns risk=HIGH and you do not have explicit operator approval.",
+        "If review returns missing_fields you cannot fill from the task context.",
+        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
+        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+      ],
+      "non_goals": [
+        "No blocking behavior.",
+        "No queue admission hooks.",
+        "No worker hooks.",
+        "No dashboard, database, registry, or rules engine.",
+        "No auto-PR creation, auto-push, auto-commit, or auto-merge.",
+        "No mutation of runtime state.",
+        "No governance-owned task lookup; agents should consult AI_Operation / DQE / OpenClaw for task state."
+      ],
+      "recommended_next_action": "Verify the lane string 'schedule_v2'. The governed lanes are ['claude_code', 'codex', 'worker']. Re-run bootstrap with the corrected lane and call prompt_guidance.review on the planned action."
+    }
+  },
+  "8_bootstrap_malformed_garbage_warn": {
+    "input": {
+      "repo": null,
+      "lane": null,
+      "task_context": "not-a-dict"
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "repo": "",
+      "lane": "",
+      "status": "WARN",
+      "applicable_governance_rules": [
+        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
+        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
+        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
+        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+      ],
+      "task_structure_expectations": [
+        "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
+        "Generic JAPAM-AI guidance: declare task_class, side_effects, and declared_impact in the task envelope.",
+        "If the repo is in fact a JAPAM-AI repo not yet in the closed set, escalate to add it via ADR + schema bump in JAPAM-AI/governance."
+      ],
+      "git_expectations": [
+        "Branch prefix: feature/, fix/, docs/, chore/, or hotfix/ per CONTRIBUTING.md.",
+        "PR body sections expected when impact is non-trivial: Summary, Architecture impact, Validation evidence, Rollback notes, Mirror updates.",
+        "Side-effects involving database/github/secrets require explicit rollback notes."
+      ],
+      "orchestration_expectations": [
+        "Lane should be one of: worker, claude_code, codex (the governed three-lane router).",
+        "Verify lane and orchestration expectations against the task context before dispatching work.",
+        "Lane '<missing>' is not a known governed lane (['claude_code', 'codex', 'worker']); verify the task context before dispatching."
+      ],
+      "mirror_update_expectations": [
+        "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
+        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+      ],
+      "when_to_call_review": [
+        "Before opening any PR.",
+        "Before any task whose side_effects exceed {none, filesystem}.",
+        "Before architecture-changing edits."
+      ],
+      "when_to_escalate": [
+        "If review returns risk=HIGH and you do not have explicit operator approval.",
+        "If review returns missing_fields you cannot fill from the task context.",
+        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
+        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+      ],
+      "non_goals": [
+        "No blocking behavior.",
+        "No queue admission hooks.",
+        "No worker hooks.",
+        "No dashboard, database, registry, or rules engine.",
+        "No auto-PR creation, auto-push, auto-commit, or auto-merge.",
+        "No mutation of runtime state.",
+        "No governance-owned task lookup; agents should consult AI_Operation / DQE / OpenClaw for task state."
+      ],
+      "recommended_next_action": "Verify both the repo string and the lane against the closed sets in prompt_guidance.review (KNOWN_REPOSITORIES, KNOWN_LANES). Then re-run bootstrap and call prompt_guidance.review with concrete prompt + context."
+    }
   }
 }

@@ -4,9 +4,22 @@ A minimal, advisory **Guidance Layer** that reduces drift across execution agent
 
 ## What this is
 
-- A single Python function: `prompt_guidance.review(prompt, context) -> dict`
-- A reusable GitHub Actions workflow that posts a Markdown comment on PRs in consuming repositories
-- Markdown templates and an operating manual for agents
+- **Two callable functions** for execution agents:
+  - `prompt_guidance.bootstrap(repo, lane, task_context) -> dict` — first-window startup contract; call **before** beginning a task / session.
+  - `prompt_guidance.review(prompt, context) -> dict` — review of a specific planned action; call **before** risky execution, PR creation, or architecture-changing work.
+- A reusable GitHub Actions workflow that posts an advisory Markdown comment on PRs in consuming repositories — used as a **backstop**, not the primary entry point.
+- Markdown templates and an operating manual for agents.
+
+The intended flow is:
+
+```
+Agent starts task
+  → call bootstrap(repo, lane, task_context)
+  → read returned guidance, internalize the contract
+  → for each risky action: call review(prompt, context)
+  → proceed, revise, or escalate
+  → PR bot later acts as backstop
+```
 
 ## What this is NOT
 
@@ -17,10 +30,26 @@ A minimal, advisory **Guidance Layer** that reduces drift across execution agent
 
 ## Quick start
 
-### Call the function
+### Call bootstrap at the start of a session
 
 ```python
-from prompt_guidance.review import review
+from prompt_guidance import bootstrap
+
+ctx = bootstrap(
+    repo="JAPAM-AI/Ai_operations",
+    lane="claude_code",
+    task_context={"task_id": "cc-abcdef01", "task_type": "schema_change"},
+)
+print(ctx["status"])                      # "READY"
+for line in ctx["task_structure_expectations"]:
+    print(" -", line)
+print("next:", ctx["recommended_next_action"])
+```
+
+### Call review before each risky action
+
+```python
+from prompt_guidance import review
 
 out = review(
     prompt="Add task_class 'deep_batch' for the nightly index refresh job.",
@@ -89,9 +118,10 @@ Same input → byte-identical output. `BLOCK` is not a valid status. Malformed i
 
 | Path | Role |
 |---|---|
-| `prompt_guidance/review.py` | Core decision logic. All behaviour. |
-| `prompt_guidance/schema.json` | I/O JSON Schema. |
-| `prompt_guidance/__init__.py` | Public re-exports. |
+| `prompt_guidance/bootstrap.py` | First-window startup-context function. Call BEFORE work begins. |
+| `prompt_guidance/review.py` | Per-action review function. Call BEFORE each risky action. |
+| `prompt_guidance/schema.json` | I/O JSON Schema (covers both functions). |
+| `prompt_guidance/__init__.py` | Public re-exports (`bootstrap`, `review`, `SCHEMA`, `GUIDANCE_VERSION`). |
 | `scripts/review_pr.py` | CI wrapper: PR metadata → `review()` → comment. |
 | `.github/workflows/guidance-review.yml` | Reusable workflow consumed by other repos. |
 | `AGENTS.md` | Per-agent operating manual. |
