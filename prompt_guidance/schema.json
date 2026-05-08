@@ -1,10 +1,52 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/JAPAM-AI/governance/prompt_guidance/schema.json",
-  "title": "prompt_guidance.review I/O contract",
-  "description": "Advisory, non-blocking, stateless governance review. Same input -> identical output.",
+  "title": "prompt_guidance I/O contract (bootstrap + review)",
+  "description": "Advisory, non-blocking, stateless governance functions. Same input -> identical output.",
   "type": "object",
   "properties": {
+    "bootstrap_input": {
+      "type": "object",
+      "required": ["repo", "lane"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": ["string", "null"],
+          "description": "Repo identifier. Known set is enforced inside bootstrap() (status=READY for known, WARN for unknown). Schema does NOT enum-restrict so callers can pass arbitrary repos and receive the WARN-path output."
+        },
+        "lane": {
+          "type": ["string", "null"],
+          "description": "Lane identifier. Known set is {worker, claude_code, codex} and is enforced inside bootstrap() (status=READY for known, WARN for unknown). Schema does NOT enum-restrict so callers can pass arbitrary lanes and receive the WARN-path output."
+        },
+        "task_context": {"type": ["object", "null"]}
+      }
+    },
+    "bootstrap_output": {
+      "type": "object",
+      "required": [
+        "guidance_version", "repo", "lane", "status",
+        "applicable_governance_rules", "task_structure_expectations",
+        "git_expectations", "orchestration_expectations",
+        "mirror_update_expectations", "when_to_call_review",
+        "when_to_escalate", "non_goals", "recommended_next_action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "guidance_version": {"type": "string"},
+        "repo": {"type": "string"},
+        "lane": {"type": "string"},
+        "status": {"type": "string", "enum": ["READY", "WARN"]},
+        "applicable_governance_rules": {"type": "array", "items": {"type": "string"}},
+        "task_structure_expectations": {"type": "array", "items": {"type": "string"}},
+        "git_expectations": {"type": "array", "items": {"type": "string"}},
+        "orchestration_expectations": {"type": "array", "items": {"type": "string"}},
+        "mirror_update_expectations": {"type": "array", "items": {"type": "string"}},
+        "when_to_call_review": {"type": "array", "items": {"type": "string"}},
+        "when_to_escalate": {"type": "array", "items": {"type": "string"}},
+        "non_goals": {"type": "array", "items": {"type": "string"}},
+        "recommended_next_action": {"type": "string"}
+      }
+    },
     "input": {
       "type": "object",
       "required": ["prompt"],

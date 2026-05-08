@@ -10,16 +10,46 @@ This file is read by every execution agent (Claude Code, OpenAI agents, Claude A
 - **Codex QC** — static analysis review
 - **Other agents / schedulers** — anything that writes to a queue or repo
 
-## Before you act
+## Before you act — two-step pattern
 
-If you are about to **open a PR**, **start a task**, or **make an architecture-changing edit**, you SHOULD call:
+### Step 1: bootstrap (called ONCE per task / session)
 
 ```python
-from prompt_guidance.review import review
+from prompt_guidance import bootstrap
+ctx = bootstrap(
+    repo="JAPAM-AI/Ai_operations",
+    lane="claude_code",
+    task_context={"task_id": "cc-abcdef01", "task_type": "..."},
+)
+# Internalise:
+#   ctx["applicable_governance_rules"]      # the contract you must hold
+#   ctx["task_structure_expectations"]      # what the task envelope should look like
+#   ctx["git_expectations"]                 # branch + PR shape
+#   ctx["orchestration_expectations"]       # lane + drift implications
+#   ctx["mirror_update_expectations"]       # follow-up PR triggers
+#   ctx["when_to_call_review"]              # the gate set
+#   ctx["when_to_escalate"]                 # the operator-handoff gate
+#   ctx["non_goals"]                        # what governance MUST NOT do
+#   ctx["recommended_next_action"]          # the literal next step
+```
+
+`bootstrap` is the **first-window** entry point — call it at the start of every task / session, before any other governance call. Output is deterministic; same input → byte-identical output. WARN is not a failure; it surfaces a verification gap.
+
+### Step 2: review (called BEFORE each risky action)
+
+```python
+from prompt_guidance import review
 out = review(prompt, context)
 ```
 
-The `out` dict is advisory. Do **not** treat `WARN` as a failure. Read the recommendations, decide, then act.
+Call before opening a PR, before architecture-changing edits, before secret-touching work, and before suggesting a new task_class. The `out` dict is advisory. Do **not** treat `WARN` as a failure.
+
+### Why two functions, not one?
+
+- `bootstrap` answers **"What rules apply before I start?"** — read once, then act.
+- `review` answers **"Is this specific prompt / task / PR aligned?"** — call per-action.
+
+The PR-comment bot is a **backstop**, not the primary governance entry point. Always prefer the bootstrap → review path during the work itself.
 
 ## Repository contract (normative)
 
