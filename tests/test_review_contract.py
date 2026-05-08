@@ -361,6 +361,106 @@ def test_review_pr_main_returns_0_when_env_missing(monkeypatch):
     assert rc == 0
 
 
+# ── PR-comment upsert via REST ids (fix for duplicate-comment bug) ───
+
+def test_existing_comment_id_returns_int_when_marker_present(monkeypatch):
+    """REST returns numeric ids; helper must return that int verbatim."""
+    fake_comments = [
+        {"id": 4403433188, "body": review_pr.MARKER + "\n### Prompt Guidance Review\n..."},
+        {"id": 4403433200, "body": "unrelated user comment"},
+    ]
+    monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
+                        lambda pr, repo: fake_comments)
+    cid = review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations")
+    assert cid == 4403433188
+
+
+def test_existing_comment_id_returns_none_when_marker_absent(monkeypatch):
+    fake_comments = [
+        {"id": 1, "body": "first user comment"},
+        {"id": 2, "body": "second user comment"},
+    ]
+    monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
+                        lambda pr, repo: fake_comments)
+    cid = review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations")
+    assert cid is None
+
+
+def test_existing_comment_id_returns_none_when_id_missing(monkeypatch):
+    fake_comments = [
+        {"body": review_pr.MARKER + "\n### Prompt Guidance Review\n..."},
+    ]
+    monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
+                        lambda pr, repo: fake_comments)
+    cid = review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations")
+    assert cid is None
+
+
+def test_existing_comment_id_returns_none_when_id_not_int(monkeypatch):
+    """REST should return numeric ids; defensively handle non-int."""
+    fake_comments = [
+        {"id": "IC_kwDOLNQ_M88AAAABAA", "body": review_pr.MARKER + "\n..."},
+    ]
+    monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
+                        lambda pr, repo: fake_comments)
+    cid = review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations")
+    assert cid is None
+
+
+def test_existing_comment_id_handles_non_list_response(monkeypatch):
+    monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
+                        lambda pr, repo: [])
+    assert review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations") is None
+
+
+def test_upsert_comment_edits_existing_when_id_found(monkeypatch):
+    """When _existing_comment_id returns an int, _upsert_comment must
+    PATCH that exact REST id, not create a new comment."""
+    monkeypatch.setattr(review_pr, "_existing_comment_id",
+                        lambda pr, repo: 4403433188)
+
+    captured = {}
+
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        captured["input"] = kwargs.get("input")
+
+        class _R:
+            returncode = 0
+        return _R()
+
+    monkeypatch.setattr(review_pr.subprocess, "run", fake_run)
+    review_pr._upsert_comment("48", "BODY", "JAPAM-AI/Ai_operations")
+    args = captured["args"]
+    # Must be a PATCH on the specific REST id, NOT `gh pr comment create`.
+    assert "api" in args, f"expected REST PATCH, got args={args}"
+    assert "PATCH" in args
+    assert "repos/JAPAM-AI/Ai_operations/issues/comments/4403433188" in args
+    assert "comment" not in args  # not the `gh pr comment` create path
+
+
+def test_upsert_comment_creates_new_when_id_none(monkeypatch):
+    """When no existing comment, _upsert_comment must call `gh pr comment`."""
+    monkeypatch.setattr(review_pr, "_existing_comment_id",
+                        lambda pr, repo: None)
+
+    captured = {}
+
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        captured["input"] = kwargs.get("input")
+
+        class _R:
+            returncode = 0
+        return _R()
+
+    monkeypatch.setattr(review_pr.subprocess, "run", fake_run)
+    review_pr._upsert_comment("48", "BODY", "JAPAM-AI/Ai_operations")
+    args = captured["args"]
+    assert "pr" in args and "comment" in args
+    assert "48" in args
+
+
 # ── examples roundtrip ────────────────────────────────────────────────
 
 def test_examples_match_review_output():
