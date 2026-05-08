@@ -1,0 +1,63 @@
+# /etc/systemd/system/prompt-guidance-mcp.service
+#
+# Native MCP server for prompt_guidance.bootstrap + .review. Wraps the
+# stdio MCP server in JAPAM-AI/governance/prompt_guidance/mcp_server.py
+# with mcp-proxy so HTTP/SSE clients (Claude.ai, ChatGPT, other off-host
+# agents) can reach the same two governance tools that local Claude
+# Desktop / Claude Code already see via stdio.
+#
+# Bind: 127.0.0.1:9003 (loopback only). Public exposure is a SEPARATE
+# operator step via the existing Cloudflare Zero Trust tunnel
+# (cloudflared.service); add a public hostname routing to
+# http://localhost:9003 in the Cloudflare dashboard.
+#
+# Auth: secret token sourced from
+# /etc/systemd/system/prompt-guidance-mcp.env (chmod 600). The token is
+# passed to mcp-proxy via the MCP_PROXY_API_KEY env var (NOT via
+# command-line argument), so it does NOT appear in /proc/<pid>/cmdline.
+# mcp-proxy enforces it via the X-API-Key request header.
+#
+# Governed-task lineage: cc-81853411 (deploy) <- cc-5baa4838 (PR #7).
+
+[Unit]
+Description=Native MCP server for prompt_guidance.bootstrap + .review (governance)
+Documentation=https://github.com/JAPAM-AI/governance/blob/main/AGENTS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/governance
+Environment=HOME=/home/ubuntu
+Environment=PYTHONPATH=/home/ubuntu/governance
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v22.22.1/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/etc/systemd/system/prompt-guidance-mcp.env
+
+# Token comes from MCP_PROXY_API_KEY in the EnvironmentFile above; it is
+# NOT passed on the command line, so it cannot leak via
+# /proc/<pid>/cmdline.
+ExecStart=/home/ubuntu/.nvm/versions/node/v22.22.1/bin/mcp-proxy \
+    --host 127.0.0.1 \
+    --port 9003 \
+    -- /usr/bin/python3 -m prompt_guidance.mcp_server
+
+# Hardening
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=prompt-guidance-mcp
+
+[Install]
+WantedBy=multi-user.target
