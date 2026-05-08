@@ -81,7 +81,7 @@
       "suggested_pr_scope": ""
     }
   },
-  "3_warn_deep_batch_drift": {
+  "3_warn_high_risk_deep_batch_no_rollback": {
     "input": {
       "prompt": "Add task_class 'deep_batch' for the nightly index refresh job. Branch: feature/deep-batch-class. Will edit Ai_operations/services/coo_orchestrator/scheduler.py.",
       "context": {
@@ -117,17 +117,13 @@
         "workers"
       ],
       "missing_fields": [],
-      "recommendations": [
-        "task_class 'deep_batch' is not in Ai_operations contract enum (['codex_qc_review', 'deep', 'restricted', 'simple', 'standard']). Open a separate alignment PR; v1 governance does not auto-fix this."
-      ],
+      "recommendations": [],
       "git_guidance": [
         "Include rollback notes in PR body (revert command + restore steps).",
         "PR body should include 'Architecture impact' section listing impact_areas.",
         "PR body should include 'Validation evidence' section pointing to test runs / dry-run output."
       ],
-      "orchestration_guidance": [
-        "task_class 'deep_batch' is not in Ai_operations/contracts/schemas/task.schema.json (current contract: ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard']). Open a separate docs/contracts alignment PR before relying on it. v1 of governance does not auto-fix this."
-      ],
+      "orchestration_guidance": [],
       "mirror_targets": [
         "architecture_docs",
         "orchestration_rules",
@@ -138,15 +134,14 @@
       "ai_operation_contract_notes": [
         "AI_Operation does not depend on prompt_guidance.review at runtime.",
         "Output is advisory; callers decide whether to act on WARN / RECOMMEND.",
-        "Defer Ai_operations PR adding 'deep_batch' to contracts/schemas/task.schema.json.",
         "Schema-impact change: follow-up PR in JAPAM-AI/Ai_operations is likely needed; this tool does not open that PR."
       ],
       "mirror_required": true,
       "recommended_repositories": [
         "JAPAM-AI/Ai_operations"
       ],
-      "suggested_pr_title": "contracts: align task_class enum to add 'deep_batch'",
-      "suggested_pr_scope": "Mirror targets: architecture_docs, orchestration_rules, runbook, task_schema_contract, validation_evidence. Affected repositories: JAPAM-AI/Ai_operations. Includes ADR + schema bump in JAPAM-AI/Ai_operations to add task_class 'deep_batch' to contracts/schemas/task.schema.json with timeouts, model, retry policy, lease TTL, and worker family routing decided. Update task.schema.json and any affected worker capability list; add ADR documenting the new contract surface. Include rollback notes (revert commands, restore steps). This tool does not open the PR; an agent or operator must."
+      "suggested_pr_title": "chore: mirror update for ai_operation",
+      "suggested_pr_scope": "Mirror targets: architecture_docs, orchestration_rules, runbook, task_schema_contract, validation_evidence. Affected repositories: JAPAM-AI/Ai_operations. Update task.schema.json and any affected worker capability list; add ADR documenting the new contract surface. Include rollback notes (revert commands, restore steps). This tool does not open the PR; an agent or operator must."
     }
   },
   "4_warn_malformed_empty": {
@@ -203,8 +198,8 @@
       ],
       "task_structure_expectations": [
         "Declare task_class explicitly for scheduled / task / agent / pr work.",
-        "Known contract task_classes: ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard'].",
-        "Observed-but-not-yet-in-contract: ['chat', 'deep_batch'] \u2014 these DRIFT from the contract enum until ADR + schema lands.",
+        "Known contract task_classes: ['codex_qc_review', 'deep', 'deep_batch', 'restricted', 'simple', 'standard'].",
+        "Observed-but-not-yet-in-contract: ['chat'] \u2014 these DRIFT from the contract enum until ADR + schema lands.",
         "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
         "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos.",
         "task_id: governed claude_code lane uses cc-* prefix (8-char hex); worker uses lt-*; codex uses lt-qc-*."
@@ -221,7 +216,7 @@
         "Long-running claude_code work hits the DurableQueue 10-minute lease cap; split into continuation cc-* tasks."
       ],
       "mirror_update_expectations": [
-        "task_class drift (deep_batch / chat) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
+        "task_class drift (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
         "Schema-touching changes likely need a follow-up ADR + schema bump in Ai_operations contracts/.",
         "Worker / orchestration / governance-doc changes \u2192 mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
         "Cross-repo work (other JAPAM-AI repos) \u2192 consult prompt_guidance.review's recommended_repositories field."
@@ -236,7 +231,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -298,7 +293,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -336,8 +331,8 @@
       ],
       "task_structure_expectations": [
         "Declare task_class, side_effects, and declared_impact in the task envelope.",
-        "AI_Operation contract task_classes (for cross-repo work that touches orchestration): ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard'].",
-        "Observed-but-not-yet-in-contract: ['chat', 'deep_batch'] \u2014 these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
+        "AI_Operation contract task_classes (for cross-repo work that touches orchestration): ['codex_qc_review', 'deep', 'deep_batch', 'restricted', 'simple', 'standard'].",
+        "Observed-but-not-yet-in-contract: ['chat'] \u2014 these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
         "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
         "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos."
       ],
@@ -365,7 +360,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -428,7 +423,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],

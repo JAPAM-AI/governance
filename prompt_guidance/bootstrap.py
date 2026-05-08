@@ -134,7 +134,7 @@ def _generic_orchestration() -> list[str]:
 
 def _ai_operation_mirror_updates() -> list[str]:
     return [
-        "task_class drift (deep_batch / chat) → mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
+        "task_class drift (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) → mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
         "Schema-touching changes likely need a follow-up ADR + schema bump in Ai_operations contracts/.",
         "Worker / orchestration / governance-doc changes → mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
         "Cross-repo work (other JAPAM-AI repos) → consult prompt_guidance.review's recommended_repositories field.",
@@ -170,7 +170,7 @@ def _general_when_to_escalate() -> list[str]:
     return [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required — open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) — open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set — escalate; do not invent.",
         "If the planned change crosses three or more repositories — escalate before opening any PR.",
     ]

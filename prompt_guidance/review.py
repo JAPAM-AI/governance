@@ -41,9 +41,16 @@ ALLOWED_INTENTS = {
     "governance_change", "repo_change", "documentation_change", "unknown",
 }
 KNOWN_CONTRACT_CLASSES = {
-    "simple", "standard", "deep", "restricted", "codex_qc_review",
+    "simple", "standard", "deep", "deep_batch", "restricted", "codex_qc_review",
 }
-EXTENDED_BRIEF_CLASSES = {"deep_batch", "chat"}
+# Observed-but-not-yet-in-contract classes. Membership here causes
+# review() to emit a schema-drift WARN (status=WARN, mirror_required=
+# True, recommended_repositories includes JAPAM-AI/Ai_operations) so
+# agents are nudged to open an alignment PR before relying on the
+# class. As of 2026-05-08, only "chat" remains in this set; "deep_batch"
+# was promoted to KNOWN_CONTRACT_CLASSES in lockstep with
+# JAPAM-AI/Ai_operations PR #50 which added it to the contract enum.
+EXTENDED_BRIEF_CLASSES = {"chat"}
 ALLOWED_TASK_CLASSES = KNOWN_CONTRACT_CLASSES | EXTENDED_BRIEF_CLASSES
 ALLOWED_BRANCH_PREFIXES = ("feature/", "fix/", "docs/", "chore/", "hotfix/")
 SYMBOLIC_MIRROR_TARGETS = {
@@ -309,9 +316,11 @@ def _recommend_repositories(mirror_required: bool, impact_areas: list[str],
     if not mirror_required:
         return []
     repos: set[str] = set()
-    # Rule 6: task_class drift (deep_batch / chat) MUST always recommend
-    # an Ai_operations alignment PR, even when impact_areas is empty,
-    # context.repo is missing, and declared_impact is empty.
+    # Rule 6: any task_class in EXTENDED_BRIEF_CLASSES (currently
+    # {chat}; see the comment on EXTENDED_BRIEF_CLASSES at the top of
+    # this module) MUST always recommend an Ai_operations alignment PR,
+    # even when impact_areas is empty, context.repo is missing, and
+    # declared_impact is empty.
     if task_class in EXTENDED_BRIEF_CLASSES:
         repos.add("JAPAM-AI/Ai_operations")
     ia = set(impact_areas)
