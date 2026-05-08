@@ -57,7 +57,7 @@ Order of precedence:
 
 - `impact_areas` is non-empty
 - `detected_intent ∈ {architecture_change, governance_change, repo_change}`
-- `task_class ∈ {deep_batch, chat}` (drift vs Ai_operations contract)
+- `task_class ∈ EXTENDED_BRIEF_CLASSES` (drift vs Ai_operations contract; currently `{chat}`)
 
 When `mirror_required = true`, the tool returns:
 
@@ -84,15 +84,15 @@ Known AI_Operation contract task classes (from `Ai_operations/contracts/schemas/
 - `simple` (default timeout 120s)
 - `standard` (default timeout 300s)
 - `deep` (default timeout 900s)
+- `deep_batch` (long-running, multi-hour, governed-batch; checkpointed/resumable; see `Ai_operations/docs/architecture/task_classes.md`)
 - `restricted`
 - `codex_qc_review`
 
-Extended observed / desired vocabulary that is **not yet** in the contract:
+Extended observed / desired vocabulary that is **not yet** in the contract (drift cases — `review` emits schema-drift `WARN` and `bootstrap` flags them):
 
-- `deep_batch`
-- `chat`
+- `chat` — appears as a circuit-breaker bucket in `services/worker_dispatch/self_healing/sla_daemon.py` but has no documented timeout / model / retry / lease semantics. Add to the contract enum only after an ADR confirms intended semantics.
 
-If `task_class ∈ {deep_batch, chat}`:
+If `task_class ∈ EXTENDED_BRIEF_CLASSES` (currently `{chat}`):
 
 - `status = WARN`,
 - `mirror_required = true`,

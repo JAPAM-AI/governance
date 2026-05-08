@@ -111,7 +111,12 @@ def test_same_input_byte_identical_output():
 
 # ── deep_batch drift contract ─────────────────────────────────────────
 
-def test_deep_batch_triggers_warn_and_mirror_required():
+def test_deep_batch_no_longer_triggers_schema_drift_recommendation():
+    """deep_batch was promoted to KNOWN_CONTRACT_CLASSES in lockstep
+    with JAPAM-AI/Ai_operations PR #50 (contract-enum addition). The
+    schema-drift recommendation that previously fired for deep_batch
+    must NOT appear in recommendations anymore. Mirror semantics
+    derived from impact_areas / risk are unchanged."""
     out = review(
         "Add task_class 'deep_batch' for the nightly index refresh job.",
         {
@@ -124,11 +129,68 @@ def test_deep_batch_triggers_warn_and_mirror_required():
             "declared_impact": ["orchestration", "task_schema"],
         },
     )
-    assert out["status"] == "WARN"
+    # No deep_batch-specific drift recommendation
+    assert not any("deep_batch" in r and "not in" in r and "contract" in r
+                   for r in out["recommendations"]), (
+        f"deep_batch drift recommendation still firing: {out['recommendations']}"
+    )
+    # No deep_batch-specific contract-note about deferring an alignment PR
+    assert not any("deep_batch" in n and "contracts/schemas/task.schema.json" in n
+                   for n in out["ai_operation_contract_notes"]), (
+        f"deep_batch deferred-PR contract note still firing: "
+        f"{out['ai_operation_contract_notes']}"
+    )
+    # mirror_required is still True — driven by impact_areas (task_schema /
+    # orchestration), NOT by drift. Ai_operations is still in
+    # recommended_repositories for the same reason.
     assert out["mirror_required"] is True
     assert "JAPAM-AI/Ai_operations" in out["recommended_repositories"]
-    assert any("deep_batch" in r for r in out["recommendations"])
-    assert out["suggested_pr_title"].startswith(ALLOWED_PR_TITLE_PREFIXES)
+
+
+def test_deep_batch_naked_does_not_drift_alone():
+    """task_class=deep_batch with NO impact, NO repo, NO declared_impact
+    must NOT trigger the schema-drift WARN anymore. mirror_required is
+    False because nothing about the input crosses repository / contract
+    surfaces."""
+    out = review(
+        "do nightly job",
+        {
+            "source": "agent",
+            "repo": None,
+            "branch": None,
+            "changed_paths": [],
+            "task_class": "deep_batch",
+            "side_effects": ["none"],
+            "declared_impact": [],
+        },
+    )
+    assert out["mirror_required"] is False
+    assert out["recommended_repositories"] == []
+    assert not any("deep_batch" in r and "not in" in r and "contract" in r
+                   for r in out["recommendations"]), (
+        f"naked deep_batch unexpectedly drifted: {out['recommendations']}"
+    )
+    assert out["suggested_pr_title"] == ""
+    # status may be WARN if missing fields are required for source=agent;
+    # the key invariant is that the WARN is NOT due to deep_batch drift.
+    assert out["status"] in ("PASS", "RECOMMEND", "WARN")
+
+
+def test_deep_batch_in_known_contract_classes():
+    """Source-of-truth invariant: KNOWN_CONTRACT_CLASSES contains
+    deep_batch; EXTENDED_BRIEF_CLASSES does not."""
+    from prompt_guidance.review import (
+        KNOWN_CONTRACT_CLASSES, EXTENDED_BRIEF_CLASSES,
+    )
+    assert "deep_batch" in KNOWN_CONTRACT_CLASSES
+    assert "deep_batch" not in EXTENDED_BRIEF_CLASSES
+
+
+def test_chat_only_remaining_extended_class():
+    """chat is the only class still flagged as drift; deferred per
+    Ai_operations PR #50 'On chat' decision."""
+    from prompt_guidance.review import EXTENDED_BRIEF_CLASSES
+    assert EXTENDED_BRIEF_CLASSES == {"chat"}
 
 
 def test_chat_class_triggers_warn_and_mirror_required():
@@ -292,25 +354,11 @@ def test_dict_for_list_field_does_not_raise():
 
 # ── naked drift contract (QC HIGH #2 fix) ────────────────────────────
 
-def test_deep_batch_naked_drift_recommends_ai_operations():
-    """task_class=deep_batch with NO impact, NO repo, NO declared_impact
-    must still recommend JAPAM-AI/Ai_operations per rule 6."""
-    out = review(
-        "do nightly job",
-        {
-            "source": "agent",
-            "repo": None,
-            "branch": None,
-            "changed_paths": [],
-            "task_class": "deep_batch",
-            "side_effects": ["none"],
-            "declared_impact": [],
-        },
-    )
-    assert out["mirror_required"] is True
-    assert "JAPAM-AI/Ai_operations" in out["recommended_repositories"]
-    assert out["status"] == "WARN"
-    assert out["suggested_pr_title"].startswith("contracts:")
+# test_deep_batch_naked_drift_recommends_ai_operations was removed when
+# deep_batch was promoted to KNOWN_CONTRACT_CLASSES (in lockstep with
+# JAPAM-AI/Ai_operations PR #50). The replacement test
+# `test_deep_batch_naked_does_not_drift_alone` (above) asserts the
+# inverted invariant: naked deep_batch must NOT trigger drift.
 
 
 def test_chat_naked_drift_recommends_ai_operations():
