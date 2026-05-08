@@ -1,0 +1,181 @@
+{
+  "1_pass_simple_human": {
+    "input": {
+      "prompt": "just confirming we should keep the README short and clear",
+      "context": {
+        "source": "human",
+        "repo": null,
+        "branch": null,
+        "changed_paths": [],
+        "task_name": null,
+        "task_class": null,
+        "priority": null,
+        "timeout_s": null,
+        "side_effects": [
+          "none"
+        ],
+        "declared_impact": []
+      }
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "status": "PASS",
+      "risk": "LOW",
+      "detected_intent": "documentation_change",
+      "impact_areas": [],
+      "missing_fields": [],
+      "recommendations": [],
+      "git_guidance": [],
+      "orchestration_guidance": [],
+      "mirror_targets": [],
+      "ai_operation_contract_notes": [
+        "AI_Operation does not depend on prompt_guidance.review at runtime.",
+        "Output is advisory; callers decide whether to act on WARN / RECOMMEND."
+      ],
+      "mirror_required": false,
+      "recommended_repositories": [],
+      "suggested_pr_title": "",
+      "suggested_pr_scope": ""
+    }
+  },
+  "2_recommend_low_risk_pr": {
+    "input": {
+      "prompt": "Tiny README typo fix: change goverance to governance.",
+      "context": {
+        "source": "pr",
+        "repo": "JAPAM-AI/governance",
+        "branch": "docs/readme-typo",
+        "changed_paths": [
+          "README.md"
+        ],
+        "task_name": null,
+        "task_class": null,
+        "priority": 4,
+        "timeout_s": null,
+        "side_effects": [
+          "filesystem"
+        ],
+        "declared_impact": []
+      }
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "status": "RECOMMEND",
+      "risk": "LOW",
+      "detected_intent": "pr",
+      "impact_areas": [],
+      "missing_fields": [],
+      "recommendations": [],
+      "git_guidance": [
+        "PR body should include 'Validation evidence' section pointing to test runs / dry-run output."
+      ],
+      "orchestration_guidance": [],
+      "mirror_targets": [],
+      "ai_operation_contract_notes": [
+        "AI_Operation does not depend on prompt_guidance.review at runtime.",
+        "Output is advisory; callers decide whether to act on WARN / RECOMMEND."
+      ],
+      "mirror_required": false,
+      "recommended_repositories": [],
+      "suggested_pr_title": "",
+      "suggested_pr_scope": ""
+    }
+  },
+  "3_warn_deep_batch_drift": {
+    "input": {
+      "prompt": "Add task_class 'deep_batch' for the nightly index refresh job. Branch: feature/deep-batch-class. Will edit Ai_operations/services/coo_orchestrator/scheduler.py.",
+      "context": {
+        "source": "agent",
+        "repo": "JAPAM-AI/Ai_operations",
+        "branch": "feature/deep-batch-class",
+        "changed_paths": [
+          "services/coo_orchestrator/scheduler.py"
+        ],
+        "task_name": "introduce-deep-batch",
+        "task_class": "deep_batch",
+        "priority": 3,
+        "timeout_s": 1800,
+        "side_effects": [
+          "filesystem",
+          "github"
+        ],
+        "declared_impact": [
+          "orchestration",
+          "task_schema"
+        ]
+      }
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "status": "WARN",
+      "risk": "HIGH",
+      "detected_intent": "unknown",
+      "impact_areas": [
+        "ai_operation",
+        "orchestration",
+        "task_schema",
+        "workers"
+      ],
+      "missing_fields": [],
+      "recommendations": [
+        "task_class 'deep_batch' is not in Ai_operations contract enum (['codex_qc_review', 'deep', 'restricted', 'simple', 'standard']). Open a separate alignment PR; v1 governance does not auto-fix this."
+      ],
+      "git_guidance": [
+        "Include rollback notes in PR body (revert command + restore steps).",
+        "PR body should include 'Architecture impact' section listing impact_areas.",
+        "PR body should include 'Validation evidence' section pointing to test runs / dry-run output."
+      ],
+      "orchestration_guidance": [
+        "task_class 'deep_batch' is not in Ai_operations/contracts/schemas/task.schema.json (current contract: ['codex_qc_review', 'deep', 'restricted', 'simple', 'standard']). Open a separate docs/contracts alignment PR before relying on it. v1 of governance does not auto-fix this."
+      ],
+      "mirror_targets": [
+        "architecture_docs",
+        "orchestration_rules",
+        "runbook",
+        "task_schema_contract",
+        "validation_evidence"
+      ],
+      "ai_operation_contract_notes": [
+        "AI_Operation does not depend on prompt_guidance.review at runtime.",
+        "Output is advisory; callers decide whether to act on WARN / RECOMMEND.",
+        "Defer Ai_operations PR adding 'deep_batch' to contracts/schemas/task.schema.json.",
+        "Schema-impact change: follow-up PR in JAPAM-AI/Ai_operations is likely needed; this tool does not open that PR."
+      ],
+      "mirror_required": true,
+      "recommended_repositories": [
+        "JAPAM-AI/Ai_operations"
+      ],
+      "suggested_pr_title": "contracts: align task_class enum to add 'deep_batch'",
+      "suggested_pr_scope": "Mirror targets: architecture_docs, orchestration_rules, runbook, task_schema_contract, validation_evidence. Affected repositories: JAPAM-AI/Ai_operations. Includes ADR + schema bump in JAPAM-AI/Ai_operations to add task_class 'deep_batch' to contracts/schemas/task.schema.json with timeouts, model, retry policy, lease TTL, and worker family routing decided. Update task.schema.json and any affected worker capability list; add ADR documenting the new contract surface. Include rollback notes (revert commands, restore steps). This tool does not open the PR; an agent or operator must."
+    }
+  },
+  "4_warn_malformed_empty": {
+    "input": {
+      "prompt": "",
+      "context": null
+    },
+    "output": {
+      "guidance_version": "1.0.0",
+      "status": "WARN",
+      "risk": "UNKNOWN",
+      "detected_intent": "unknown",
+      "impact_areas": [],
+      "missing_fields": [
+        "context",
+        "prompt"
+      ],
+      "recommendations": [],
+      "git_guidance": [],
+      "orchestration_guidance": [],
+      "mirror_targets": [],
+      "ai_operation_contract_notes": [
+        "AI_Operation does not depend on prompt_guidance.review at runtime.",
+        "Output is advisory; callers decide whether to act on WARN / RECOMMEND."
+      ],
+      "mirror_required": false,
+      "recommended_repositories": [],
+      "suggested_pr_title": "",
+      "suggested_pr_scope": ""
+    }
+  }
+}
