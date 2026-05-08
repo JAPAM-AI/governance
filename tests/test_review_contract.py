@@ -588,7 +588,10 @@ def test_bootstrap_ai_operations_includes_specific_guidance():
     # Must mention task_class and the contract enum
     joined = " ".join(out["task_structure_expectations"])
     assert "task_class" in joined
-    assert "deep_batch" in joined or "chat" in joined  # mention drift class
+    # AI_Operation guidance must mention either side of the contract
+    # vocabulary: deep_batch (now in KNOWN_CONTRACT_CLASSES) or chat
+    # (still in EXTENDED_BRIEF_CLASSES, drift). At least one must appear.
+    assert "deep_batch" in joined or "chat" in joined
     # Mirror guidance must mention the contract path or schema
     mirror = " ".join(out["mirror_update_expectations"])
     assert "task_class" in mirror or "task.schema.json" in mirror

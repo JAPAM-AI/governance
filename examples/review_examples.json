@@ -40,7 +40,7 @@
   },
   "2_recommend_low_risk_pr": {
     "input": {
-      "prompt": "Tiny README typo fix: change goverance to governance.",
+      "prompt": "Tiny README typo fix: replace fictitious-typo with the correct spelling.",
       "context": {
         "source": "pr",
         "repo": "JAPAM-AI/governance",
