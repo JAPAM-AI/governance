@@ -36,9 +36,32 @@ def _gh(*args: str, input_text: str | None = None) -> str:
 
 
 def _pr_metadata(pr: str) -> dict:
+    """PR header fields. Comments are fetched separately via the REST
+    API in `_list_pr_comments_rest` because `gh pr view --json
+    comments` returns GraphQL node IDs (strings) rather than the
+    numeric REST IDs needed for PATCH-by-id."""
     raw = _gh("pr", "view", pr, "--json",
-              "title,body,headRefName,number,files,baseRefName,comments")
+              "title,body,headRefName,number,files,baseRefName")
     return json.loads(raw)
+
+
+def _list_pr_comments_rest(pr: str, repo: str) -> list[dict]:
+    """List issue comments on a PR using the REST API.
+
+    Returns a list of dicts with a numeric ``id`` (the issue-comment
+    REST id). Used by `_existing_comment_id` so `PATCH
+    /repos/{repo}/issues/comments/{id}` can target the correct
+    comment. Robust to non-list / non-dict shapes (returns []).
+    """
+    try:
+        raw = _gh("api", f"repos/{repo}/issues/{pr}/comments")
+    except Exception:
+        return []
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
 
 
 def _build_context(repo: str, meta: dict) -> dict:
@@ -95,18 +118,36 @@ def render_comment(out: dict, commit_sha_short: str) -> str:
     return body
 
 
-def _existing_comment_id(meta: dict) -> int | None:
-    for c in meta.get("comments", []) or []:
-        if c.get("body", "").startswith(MARKER):
-            cid = c.get("id") or c.get("databaseId")
-            try:
-                return int(cid) if cid is not None else None
-            except (TypeError, ValueError):
-                return None
+def _existing_comment_id(pr: str, repo: str) -> int | None:
+    """Return the numeric REST id of the bot's existing comment, or None.
+
+    Walks REST issue comments (via `_list_pr_comments_rest`) and finds
+    the FIRST comment whose body starts with the MARKER. Returns the
+    integer ``id`` directly. Robust to malformed responses: missing
+    or non-int ids fall through to None so the caller takes the
+    create-new path rather than crashing.
+    """
+    for c in _list_pr_comments_rest(pr, repo):
+        if not isinstance(c, dict):
+            continue
+        if not c.get("body", "").startswith(MARKER):
+            continue
+        cid = c.get("id")
+        if isinstance(cid, int):
+            return cid
+        return None
     return None
 
 
-def _upsert_comment(pr: str, body: str, repo: str, comment_id: int | None) -> None:
+def _upsert_comment(pr: str, body: str, repo: str) -> None:
+    """Create-or-edit the single bot comment on a PR.
+
+    Looks up the existing bot comment via REST (`_existing_comment_id`).
+    If found, PATCHes that exact REST id. If not, creates a new comment
+    via `gh pr comment`. The bot manages exactly one comment per PR
+    identified by the leading <!-- prompt-guidance:v1 --> marker.
+    """
+    comment_id = _existing_comment_id(pr, repo)
     if comment_id is None:
         subprocess.run(
             ("gh", "pr", "comment", pr, "--body-file", "-"),
@@ -147,8 +188,7 @@ def main() -> int:
         ctx = _build_context(repo, meta)
         out = review(prompt, ctx)
         body = render_comment(out, commit_sha_short)
-        cid = _existing_comment_id(meta)
-        _upsert_comment(pr, body, repo, cid)
+        _upsert_comment(pr, body, repo)
         return 0
     except Exception as exc:
         print(f"review_pr: {type(exc).__name__}: {exc}", file=sys.stderr)
