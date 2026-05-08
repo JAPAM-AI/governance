@@ -236,6 +236,131 @@ def test_render_comment_includes_status_and_mirror_fields():
     assert "does not block merge" in body.lower()
 
 
+# ── malformed-input coercion (QC HIGH #1 fix) ─────────────────────────
+
+def test_non_iterable_changed_paths_does_not_raise():
+    out = review(
+        "x",
+        {"source": "agent", "repo": "JAPAM-AI/governance",
+         "changed_paths": 5, "side_effects": ["filesystem"]},
+    )
+    assert isinstance(out, dict)
+    assert set(out.keys()) == REQUIRED_OUTPUT_KEYS
+
+
+def test_non_iterable_side_effects_does_not_raise():
+    out = review(
+        "x",
+        {"source": "agent", "repo": "JAPAM-AI/governance",
+         "changed_paths": [], "side_effects": 7},
+    )
+    assert isinstance(out, dict)
+    assert set(out.keys()) == REQUIRED_OUTPUT_KEYS
+
+
+def test_non_iterable_declared_impact_does_not_raise():
+    out = review(
+        "x",
+        {"source": "agent", "repo": "JAPAM-AI/governance",
+         "side_effects": ["none"], "declared_impact": 42},
+    )
+    assert isinstance(out, dict)
+    assert set(out.keys()) == REQUIRED_OUTPUT_KEYS
+
+
+def test_dict_for_list_field_does_not_raise():
+    """Even more pathological: pass a dict where a list is expected."""
+    out = review(
+        "x",
+        {"source": "agent", "side_effects": {"foo": "bar"},
+         "changed_paths": {"a": 1}, "declared_impact": "not a list"},
+    )
+    assert isinstance(out, dict)
+    assert set(out.keys()) == REQUIRED_OUTPUT_KEYS
+    # Coerced fields should treat as empty
+    assert out["impact_areas"] == []
+
+
+# ── naked drift contract (QC HIGH #2 fix) ────────────────────────────
+
+def test_deep_batch_naked_drift_recommends_ai_operations():
+    """task_class=deep_batch with NO impact, NO repo, NO declared_impact
+    must still recommend JAPAM-AI/Ai_operations per rule 6."""
+    out = review(
+        "do nightly job",
+        {
+            "source": "agent",
+            "repo": None,
+            "branch": None,
+            "changed_paths": [],
+            "task_class": "deep_batch",
+            "side_effects": ["none"],
+            "declared_impact": [],
+        },
+    )
+    assert out["mirror_required"] is True
+    assert "JAPAM-AI/Ai_operations" in out["recommended_repositories"]
+    assert out["status"] == "WARN"
+    assert out["suggested_pr_title"].startswith("contracts:")
+
+
+def test_chat_naked_drift_recommends_ai_operations():
+    out = review(
+        "introduce chat-style class",
+        {
+            "source": "agent",
+            "repo": None,
+            "branch": None,
+            "changed_paths": [],
+            "task_class": "chat",
+            "side_effects": ["none"],
+            "declared_impact": [],
+        },
+    )
+    assert out["mirror_required"] is True
+    assert "JAPAM-AI/Ai_operations" in out["recommended_repositories"]
+    assert out["status"] == "WARN"
+
+
+# ── review_pr.main always exits 0 (QC MEDIUM #3 fix) ──────────────────
+
+def test_review_pr_main_returns_0_when_pr_metadata_raises(monkeypatch):
+    """Even when the gh CLI / subprocess layer raises, main() must
+    return 0 so the calling workflow does not fail."""
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated gh CLI failure")
+    monkeypatch.setattr(review_pr, "_pr_metadata", _boom)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "JAPAM-AI/governance")
+    monkeypatch.setenv("GITHUB_PR_NUMBER", "1")
+    monkeypatch.setenv("GITHUB_SHA", "deadbee" + "f" * 33)
+    rc = review_pr.main()
+    assert rc == 0
+
+
+def test_review_pr_main_returns_0_when_upsert_raises(monkeypatch):
+    """Same guarantee for the comment-posting path."""
+    monkeypatch.setattr(review_pr, "_pr_metadata", lambda pr: {
+        "title": "x", "body": "y", "headRefName": "feature/x",
+        "number": 1, "files": [], "baseRefName": "main", "comments": [],
+    })
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated comment upsert failure")
+    monkeypatch.setattr(review_pr, "_upsert_comment", _boom)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "JAPAM-AI/governance")
+    monkeypatch.setenv("GITHUB_PR_NUMBER", "1")
+    monkeypatch.setenv("GITHUB_SHA", "deadbee" + "f" * 33)
+    rc = review_pr.main()
+    assert rc == 0
+
+
+def test_review_pr_main_returns_0_when_env_missing(monkeypatch):
+    """Missing env vars should not raise; wrapper exits 0."""
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    monkeypatch.delenv("GITHUB_PR_NUMBER", raising=False)
+    rc = review_pr.main()
+    assert rc == 0
+
+
 # ── examples roundtrip ────────────────────────────────────────────────
 
 def test_examples_match_review_output():

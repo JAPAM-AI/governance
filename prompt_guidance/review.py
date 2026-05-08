@@ -71,13 +71,32 @@ except Exception:
     SCHEMA = {}
 
 # ── optional structural-hint dependency (architect_tools) ─────────────
+# Narrow exception: import-time failure is the only thing this guard is
+# for. Runtime failures of the validator are swallowed inside
+# _structural_hints, which keeps the tool non-blocking even if
+# architect_tools is present but partially broken.
 try:
     from architect_tools.prompt_validator import validate_prompt as _arch_validate
-except Exception:
+except ImportError:
     _arch_validate = None
 
 
 # ── helpers (pure functions) ──────────────────────────────────────────
+
+def _as_str_list(value: Any) -> list[str]:
+    """Coerce a context field into a list[str], swallowing malformed
+    input.
+
+    The ``review()`` function must never raise on normal malformed
+    input. ``list(value or [])`` violates that for non-iterable values
+    like ``int``: ``list(5)`` raises ``TypeError``. This helper returns
+    an empty list for any non-list value, and filters non-string
+    elements from a list (so ``[1, 'foo', None]`` becomes ``['foo']``).
+    """
+    if isinstance(value, list):
+        return [x for x in value if isinstance(x, str)]
+    return []
+
 
 def _classify_intent(prompt: str, source: str | None) -> str:
     if source == "pr":
@@ -286,10 +305,15 @@ def _compute_mirror_required(impact_areas: list[str], intent: str,
 
 def _recommend_repositories(mirror_required: bool, impact_areas: list[str],
                             prompt: str, changed_paths: list[str],
-                            ctx_repo) -> list[str]:
+                            ctx_repo, task_class) -> list[str]:
     if not mirror_required:
         return []
     repos: set[str] = set()
+    # Rule 6: task_class drift (deep_batch / chat) MUST always recommend
+    # an Ai_operations alignment PR, even when impact_areas is empty,
+    # context.repo is missing, and declared_impact is empty.
+    if task_class in EXTENDED_BRIEF_CLASSES:
+        repos.add("JAPAM-AI/Ai_operations")
     ia = set(impact_areas)
     if ia & {"ai_operation", "orchestration", "task_schema",
              "workers", "mcp_tools"}:
@@ -406,13 +430,13 @@ def review(prompt: Any, context: Any = None) -> dict:
     source        = ctx.get("source") if ctx.get("source") in ALLOWED_SOURCES else None
     branch        = ctx.get("branch")
     ctx_repo      = ctx.get("repo")
-    changed_paths = list(ctx.get("changed_paths") or [])
+    changed_paths = _as_str_list(ctx.get("changed_paths"))
     task_name     = ctx.get("task_name")
     task_class    = ctx.get("task_class")
     timeout_s     = ctx.get("timeout_s")
     priority      = ctx.get("priority")
-    side_effects  = list(ctx.get("side_effects") or [])
-    declared      = [d for d in (ctx.get("declared_impact") or [])
+    side_effects  = _as_str_list(ctx.get("side_effects"))
+    declared      = [d for d in _as_str_list(ctx.get("declared_impact"))
                      if d in ALLOWED_DECLARED_IMPACT]
 
     # 2. compute fields
@@ -457,7 +481,8 @@ def review(prompt: Any, context: Any = None) -> dict:
 
     mirror_required = _compute_mirror_required(impact_areas, intent, task_class)
     recommended_repositories = _recommend_repositories(
-        mirror_required, impact_areas, prompt, changed_paths, ctx_repo)
+        mirror_required, impact_areas, prompt, changed_paths, ctx_repo,
+        task_class)
     suggested_pr_title = _suggest_pr_title(
         mirror_required, intent, impact_areas, task_class, task_name, prompt)
     suggested_pr_scope = _suggest_pr_scope(

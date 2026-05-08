@@ -125,22 +125,34 @@ def _upsert_comment(pr: str, body: str, repo: str, comment_id: int | None) -> No
 
 
 def main() -> int:
-    repo = os.environ.get("GITHUB_REPOSITORY", "")
-    pr = os.environ.get("GITHUB_PR_NUMBER", "")
-    commit_sha_short = (os.environ.get("GITHUB_SHA") or "unknown")[:7]
-    if not repo or not pr:
-        print("review_pr: GITHUB_REPOSITORY and GITHUB_PR_NUMBER required",
-              file=sys.stderr)
-        return 0  # advisory wrapper; never fail the workflow
+    """Entry point for the GitHub Actions reusable workflow.
 
-    meta = _pr_metadata(pr)
-    prompt = ((meta.get("title") or "") + "\n\n" + (meta.get("body") or "")).strip()
-    ctx = _build_context(repo, meta)
-    out = review(prompt, ctx)
-    body = render_comment(out, commit_sha_short)
-    cid = _existing_comment_id(meta)
-    _upsert_comment(pr, body, repo, cid)
-    return 0
+    Always returns 0. This wrapper is advisory; a non-zero exit would
+    fail the calling workflow step, which would tempt operators to
+    treat the comment as a merge gate. Any exception (gh CLI failure,
+    JSON parse failure, GitHub auth failure, comment upsert failure)
+    is caught here, logged to stderr for diagnostics, and the wrapper
+    still exits 0.
+    """
+    try:
+        repo = os.environ.get("GITHUB_REPOSITORY", "")
+        pr = os.environ.get("GITHUB_PR_NUMBER", "")
+        commit_sha_short = (os.environ.get("GITHUB_SHA") or "unknown")[:7]
+        if not repo or not pr:
+            print("review_pr: GITHUB_REPOSITORY and GITHUB_PR_NUMBER required",
+                  file=sys.stderr)
+            return 0
+        meta = _pr_metadata(pr)
+        prompt = ((meta.get("title") or "") + "\n\n" + (meta.get("body") or "")).strip()
+        ctx = _build_context(repo, meta)
+        out = review(prompt, ctx)
+        body = render_comment(out, commit_sha_short)
+        cid = _existing_comment_id(meta)
+        _upsert_comment(pr, body, repo, cid)
+        return 0
+    except Exception as exc:
+        print(f"review_pr: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 0
 
 
 if __name__ == "__main__":
