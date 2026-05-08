@@ -416,10 +416,38 @@ def test_existing_comment_id_returns_none_when_id_not_int(monkeypatch):
     assert cid is None
 
 
-def test_existing_comment_id_handles_non_list_response(monkeypatch):
+def test_existing_comment_id_handles_empty_list_response(monkeypatch):
+    """Empty list path of _existing_comment_id (most common case)."""
     monkeypatch.setattr(review_pr, "_list_pr_comments_rest",
                         lambda pr, repo: [])
     assert review_pr._existing_comment_id("48", "JAPAM-AI/Ai_operations") is None
+
+
+def test_list_pr_comments_rest_returns_empty_on_non_list_json(monkeypatch):
+    """The non-list-response branch lives inside _list_pr_comments_rest
+    itself: when the gh CLI returns a JSON object (not a list), the
+    helper must return [] so callers don't see a dict where they
+    expect a list."""
+    monkeypatch.setattr(review_pr, "_gh", lambda *args, **kwargs: '{"message": "Not Found", "documentation_url": "..."}')
+    out = review_pr._list_pr_comments_rest("48", "JAPAM-AI/Ai_operations")
+    assert out == []
+
+
+def test_list_pr_comments_rest_returns_empty_on_unparseable_json(monkeypatch):
+    """When the gh CLI returns non-JSON, the helper must return []."""
+    monkeypatch.setattr(review_pr, "_gh", lambda *args, **kwargs: "not json at all")
+    out = review_pr._list_pr_comments_rest("48", "JAPAM-AI/Ai_operations")
+    assert out == []
+
+
+def test_list_pr_comments_rest_returns_empty_when_gh_raises(monkeypatch):
+    """When the gh CLI itself raises (e.g., subprocess error), the
+    helper must return []."""
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated gh CLI failure")
+    monkeypatch.setattr(review_pr, "_gh", _boom)
+    out = review_pr._list_pr_comments_rest("48", "JAPAM-AI/Ai_operations")
+    assert out == []
 
 
 def test_upsert_comment_edits_existing_when_id_found(monkeypatch):

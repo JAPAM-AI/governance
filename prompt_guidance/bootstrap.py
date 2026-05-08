@@ -197,7 +197,12 @@ def bootstrap(repo: Any, lane: Any, task_context: Any = None) -> dict:
     """
     repo_s = repo if isinstance(repo, str) else ""
     lane_s = lane if isinstance(lane, str) else ""
-    ctx = task_context if isinstance(task_context, dict) else {}
+    # task_context is reserved for future per-task hints; v1 does not
+    # branch on it. The isinstance check is kept (even though the
+    # coerced value is unused) as a defensive contract so that future
+    # additions referencing task_context cannot accidentally raise.
+    if not isinstance(task_context, dict):
+        task_context = {}
 
     is_ai_operation = repo_s == "JAPAM-AI/Ai_operations"
     is_known_repo = repo_s in KNOWN_REPOSITORIES
@@ -258,7 +263,7 @@ def bootstrap(repo: Any, lane: Any, task_context: Any = None) -> dict:
             f"and call prompt_guidance.review on the planned action."
         )
 
-    return {
+    out = {
         "guidance_version": GUIDANCE_VERSION,
         "repo": repo_s,
         "lane": lane_s,
@@ -273,3 +278,11 @@ def bootstrap(repo: Any, lane: Any, task_context: Any = None) -> dict:
         "non_goals": _general_non_goals(),
         "recommended_next_action": rec,
     }
+    # Runtime guardrail: any future edit that adds, drops, or renames a
+    # top-level key fails fast here instead of silently shipping a broken
+    # output shape. Tests still cover the same invariant (belt + braces).
+    assert set(out.keys()) == set(_REQUIRED_OUTPUT_KEYS), (
+        f"bootstrap output shape drift: got {sorted(out.keys())}, "
+        f"expected {sorted(_REQUIRED_OUTPUT_KEYS)}"
+    )
+    return out

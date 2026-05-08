@@ -10,8 +10,14 @@
       "required": ["repo", "lane"],
       "additionalProperties": false,
       "properties": {
-        "repo": {"type": ["string", "null"]},
-        "lane": {"type": ["string", "null"], "enum": ["worker", "claude_code", "codex", null, ""]},
+        "repo": {
+          "type": ["string", "null"],
+          "description": "Repo identifier. Known set is enforced inside bootstrap() (status=READY for known, WARN for unknown). Schema does NOT enum-restrict so callers can pass arbitrary repos and receive the WARN-path output."
+        },
+        "lane": {
+          "type": ["string", "null"],
+          "description": "Lane identifier. Known set is {worker, claude_code, codex} and is enforced inside bootstrap() (status=READY for known, WARN for unknown). Schema does NOT enum-restrict so callers can pass arbitrary lanes and receive the WARN-path output."
+        },
         "task_context": {"type": ["object", "null"]}
       }
     },
