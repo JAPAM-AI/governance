@@ -34,6 +34,12 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PR_NUMBER: ${{ steps.pr.outputs.number }}
           GITHUB_SHA: ${{ github.sha }}
+          # The runner only has .governance/ checked out (the source-of-
+          # truth for review.py / review_pr.py). It does NOT check out
+          # the calling repository, so `gh pr view` cannot auto-detect
+          # the repo from a git remote. Set GH_REPO so every gh call
+          # in scripts/review_pr.py picks up the calling repo from env.
+          GH_REPO: ${{ github.repository }}
           PYTHONPATH: ${{ github.workspace }}/.governance
         run: |
           python .governance/scripts/review_pr.py
