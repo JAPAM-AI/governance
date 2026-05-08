@@ -316,9 +316,11 @@ def _recommend_repositories(mirror_required: bool, impact_areas: list[str],
     if not mirror_required:
         return []
     repos: set[str] = set()
-    # Rule 6: task_class drift (deep_batch / chat) MUST always recommend
-    # an Ai_operations alignment PR, even when impact_areas is empty,
-    # context.repo is missing, and declared_impact is empty.
+    # Rule 6: any task_class in EXTENDED_BRIEF_CLASSES (currently
+    # {chat}; see the comment on EXTENDED_BRIEF_CLASSES at the top of
+    # this module) MUST always recommend an Ai_operations alignment PR,
+    # even when impact_areas is empty, context.repo is missing, and
+    # declared_impact is empty.
     if task_class in EXTENDED_BRIEF_CLASSES:
         repos.add("JAPAM-AI/Ai_operations")
     ia = set(impact_areas)

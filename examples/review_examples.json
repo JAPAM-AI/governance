@@ -81,7 +81,7 @@
       "suggested_pr_scope": ""
     }
   },
-  "3_warn_deep_batch_drift": {
+  "3_warn_high_risk_deep_batch_no_rollback": {
     "input": {
       "prompt": "Add task_class 'deep_batch' for the nightly index refresh job. Branch: feature/deep-batch-class. Will edit Ai_operations/services/coo_orchestrator/scheduler.py.",
       "context": {
@@ -216,7 +216,7 @@
         "Long-running claude_code work hits the DurableQueue 10-minute lease cap; split into continuation cc-* tasks."
       ],
       "mirror_update_expectations": [
-        "task_class drift (deep_batch / chat) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
+        "task_class drift (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
         "Schema-touching changes likely need a follow-up ADR + schema bump in Ai_operations contracts/.",
         "Worker / orchestration / governance-doc changes \u2192 mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
         "Cross-repo work (other JAPAM-AI repos) \u2192 consult prompt_guidance.review's recommended_repositories field."
@@ -231,7 +231,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -293,7 +293,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -360,7 +360,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
@@ -423,7 +423,7 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift (deep_batch / chat) is required \u2014 open separate alignment PR; do not auto-fix.",
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
         "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
         "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
       ],
