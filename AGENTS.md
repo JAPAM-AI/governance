@@ -51,6 +51,42 @@ Call before opening a PR, before architecture-changing edits, before secret-touc
 
 The PR-comment bot is a **backstop**, not the primary governance entry point. Always prefer the bootstrap → review path during the work itself.
 
+### Native MCP tools (preferred discovery surface)
+
+The two functions are also exposed as native MCP tools so OpenAI / Claw / Claude-Desktop sessions can call them directly without Python paths or filesystem snooping:
+
+| MCP tool name | Wraps | Purpose |
+|---|---|---|
+| `prompt_guidance.bootstrap` | `prompt_guidance.bootstrap()` | first-window governance bootstrap (Step 1) |
+| `prompt_guidance.review` | `prompt_guidance.review()` | per-action governance review (Step 2) |
+
+Server: `prompt_guidance/mcp_server.py` (stdio MCP server; pure wrapper — imports and calls the two functions, never duplicates governance logic, never reads telemetry/dashboard/queue state).
+
+A new MCP-connected session SHOULD call `prompt_guidance.bootstrap` as its first action. Telemetry tools (dashboard / status / canonical-health) are observational, not normative — governance doctrine comes from `bootstrap` + `review` + AGENTS.md + GUIDANCE.md, never from runtime telemetry.
+
+The filesystem paths under `/home/ubuntu/governance/prompt_guidance/` remain canonical backup for environments that don't have MCP wired.
+
+Configuration example for an MCP client (e.g. Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "prompt_guidance": {
+      "command": "python3",
+      "args": ["-m", "prompt_guidance.mcp_server"],
+      "env": {"PYTHONPATH": "/home/ubuntu/governance"}
+    }
+  }
+}
+```
+
+For HTTP/SSE access (Claude.ai remote integrations), wrap with `mcp-proxy`:
+
+```bash
+mcp-proxy --port 9003 --apiKey <token> -- \
+    python3 -m prompt_guidance.mcp_server
+```
+
 ## Repository contract (normative)
 
 1. **Advisory only.** `prompt_guidance.review` returns advice. No output blocks any pipeline.

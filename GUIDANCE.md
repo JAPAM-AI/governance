@@ -9,6 +9,13 @@ This is the human-readable form of the deterministic logic in `prompt_guidance/r
 
 The PR-comment bot is a backstop. Bootstrap and review are the primary entry points.
 
+Both functions are also exposed as **native MCP tools** for sessions that connect via OpenAI / Claw / Claude-Desktop:
+
+- `prompt_guidance.bootstrap` (MCP tool — wraps the Python function in `prompt_guidance/mcp_server.py`)
+- `prompt_guidance.review` (MCP tool — wraps the Python function)
+
+A new MCP-connected session should call `prompt_guidance.bootstrap` as its first action. **Do not infer governance from dashboard / canonical-health / queue state** — telemetry is observational, not normative. Governance doctrine comes from this document, AGENTS.md, and the two tools.
+
 ## Inputs the tool considers
 
 - `prompt` — the natural-language description of the work
