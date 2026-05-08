@@ -1,0 +1,39 @@
+name: guidance-review
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: Python version to use
+        required: false
+        default: "3.12"
+        type: string
+permissions:
+  pull-requests: write
+  contents: read
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout governance @ main
+        uses: actions/checkout@v4
+        with:
+          repository: JAPAM-AI/governance
+          ref: main
+          path: .governance
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Identify PR number
+        id: pr
+        run: |
+          echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+      - name: Run guidance review and upsert comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PR_NUMBER: ${{ steps.pr.outputs.number }}
+          GITHUB_SHA: ${{ github.sha }}
+          PYTHONPATH: ${{ github.workspace }}/.governance
+        run: |
+          python .governance/scripts/review_pr.py

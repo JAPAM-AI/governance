@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JAPAM-AI/governance/prompt_guidance/schema.json",
+  "title": "prompt_guidance.review I/O contract",
+  "description": "Advisory, non-blocking, stateless governance review. Same input -> identical output.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": ["prompt"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt": {"type": "string"},
+        "context": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "source": {"type": ["string", "null"], "enum": ["human", "agent", "scheduler", "pr", "task", null]},
+            "repo": {"type": ["string", "null"]},
+            "branch": {"type": ["string", "null"]},
+            "changed_paths": {"type": "array", "items": {"type": "string"}},
+            "task_name": {"type": ["string", "null"]},
+            "task_class": {"type": ["string", "null"], "enum": ["simple", "standard", "deep", "deep_batch", "restricted", "chat", "codex_qc_review", null]},
+            "priority": {"type": ["integer", "null"]},
+            "timeout_s": {"type": ["integer", "null"]},
+            "side_effects": {"type": "array", "items": {"type": "string", "enum": ["filesystem", "database", "network", "email", "github", "sharepoint", "browser", "secrets", "none"]}},
+            "declared_impact": {"type": "array", "items": {"type": "string", "enum": ["ai_operation", "orchestration", "workers", "task_schema", "mcp_tools", "git_rules", "governance_docs", "other_repos"]}}
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "guidance_version", "status", "risk", "detected_intent",
+        "impact_areas", "missing_fields", "recommendations",
+        "git_guidance", "orchestration_guidance", "mirror_targets",
+        "ai_operation_contract_notes", "mirror_required",
+        "recommended_repositories", "suggested_pr_title",
+        "suggested_pr_scope"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "guidance_version": {"type": "string"},
+        "status": {"type": "string", "enum": ["PASS", "WARN", "RECOMMEND"]},
+        "risk": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "UNKNOWN"]},
+        "detected_intent": {"type": "string", "enum": ["task", "pr", "architecture_change", "bug_fix", "governance_change", "repo_change", "documentation_change", "unknown"]},
+        "impact_areas": {"type": "array", "items": {"type": "string", "enum": ["ai_operation", "orchestration", "workers", "task_schema", "mcp_tools", "git_rules", "governance_docs", "other_repos"]}},
+        "missing_fields": {"type": "array", "items": {"type": "string"}},
+        "recommendations": {"type": "array", "items": {"type": "string"}},
+        "git_guidance": {"type": "array", "items": {"type": "string"}},
+        "orchestration_guidance": {"type": "array", "items": {"type": "string"}},
+        "mirror_targets": {"type": "array", "items": {"type": "string", "enum": ["architecture_docs", "task_schema_contract", "orchestration_rules", "mcp_contracts", "git_pr_template", "governance_docs", "runbook", "validation_evidence"]}},
+        "ai_operation_contract_notes": {"type": "array", "items": {"type": "string"}},
+        "mirror_required": {"type": "boolean"},
+        "recommended_repositories": {"type": "array", "items": {"type": "string"}},
+        "suggested_pr_title": {"type": "string"},
+        "suggested_pr_scope": {"type": "string"}
+      }
+    }
+  }
+}
