@@ -2,6 +2,18 @@
 
 This file is read by every execution agent (Claude Code, OpenAI agents, Claude AI, Codex QC, scheduled bots) before performing tasks, opening PRs, or making architecture-changing edits in any JAPAM-AI repository.
 
+## Canonical authority split
+
+JAPAM-AI's runtime is split across **two** canonical authorities, deliberately decoupled at runtime (no cross-imports):
+
+| Authority | Repository | What it owns |
+|---|---|---|
+| **Governance-automation authority** | `JAPAM-AI/governance` (this repo) | Operating contract (`AGENTS.md`, `GUIDANCE.md`); `prompt_guidance.bootstrap` + `.review` packages; PR-comment backstop workflow (`.github/workflows/guidance-review.yml`); MCP wrapper + deployment recipe |
+| **Orchestration authority** | `JAPAM-AI/Ai_operations` | Worker fleet (`cto_worker`, `coo_orchestrator`, `coo_gateway`, `durable_queue`, `policy_engine`, `worker_dispatch`); gateway shims; three-lane router; task / contract schemas; ADRs; deployment templates (`infra/`); repo-internal policy docs (`docs/governance/`) |
+| **DECOMMISSIONED** | `rrekhi-debug/ai-ops` | None — archival only. See `JAPAM-AI/Ai_operations/docs/governance/AI_OPS_DECOMMISSION_NOTICE.md`. |
+
+Product / orchestration repos should reference governance, not duplicate it. Governance never imports from any consumer repo at runtime; the only optional touch-point is `architect_tools.prompt_validator` in Ai_operations, which governance attempts via `try/except ImportError` (silent failure).
+
 ## Roles addressed
 
 - **Claude Code** — engineering, scripts, builds, fixes
