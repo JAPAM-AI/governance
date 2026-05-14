@@ -30,6 +30,28 @@ from .review import (
 # ── closed-set vocabularies for bootstrap ─────────────────────────────
 KNOWN_LANES = {"worker", "claude_code", "codex"}
 ALLOWED_BOOTSTRAP_STATUS = {"READY", "WARN"}
+
+# Canonical path policy (Claw-AI disambiguation, 2026-05-13).
+# Surfaced in every bootstrap call so agents never default to the frozen
+# legacy /home/ubuntu/japam-docs root for new search/source/doc work.
+# Stored as a module-level tuple so tests can assert membership directly.
+CANONICAL_PATH_POLICY = (
+    "Canonical orchestration root is /home/ubuntu/Ai_operations; canonical "
+    "governance-automation root is JAPAM-AI/governance.",
+    "Agents MUST NOT use /home/ubuntu/japam-docs as a search root, source "
+    "root, implementation root, or documentation root. It is frozen legacy.",
+    "/home/ubuntu/japam-docs may be referenced only as historical evidence, "
+    "rollback archive, decommissioned source evidence, or an explicitly "
+    "named LEGACY_RUNTIME_EXCEPTION.",
+    "When using Claw-MCP filesystem.search / code.grep / filesystem.list / "
+    "filesystem.read for AI-Ops governance or orchestration work, the "
+    "default root MUST be /home/ubuntu/Ai_operations.",
+    "If an exception requires reading /home/ubuntu/japam-docs, state the "
+    "exception explicitly and cite the canonical Ai_operations document "
+    "that permits it (typically docs/governance/SOURCE_OF_TRUTH.md, an ADR "
+    "under docs/adr/, or a legacy-pointers/*.DEPRECATED.md file).",
+)
+
 _REQUIRED_OUTPUT_KEYS = (
     "guidance_version",
     "repo",
@@ -58,6 +80,7 @@ def _general_governance_rules() -> list[str]:
         "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
         "Tolerance — malformed input must produce status=WARN, never raise.",
         "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting.",
+        *CANONICAL_PATH_POLICY,
     ]
 
 

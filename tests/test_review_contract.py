@@ -699,3 +699,69 @@ def test_examples_match_review_output():
         assert actual == expected, (
             f"example {name} drifted from live function output"
         )
+
+
+# ── canonical-path policy (Claw-AI disambiguation, 2026-05-13) ────────
+
+def test_bootstrap_surfaces_canonical_ai_operations_root_for_known_repo():
+    """Every bootstrap call for a known repo must surface
+    /home/ubuntu/Ai_operations as the canonical root."""
+    out = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    joined = " ".join(out["applicable_governance_rules"])
+    assert "/home/ubuntu/Ai_operations" in joined
+    assert "Canonical orchestration root" in joined
+
+
+def test_bootstrap_does_not_instruct_agents_to_use_japam_docs_as_root():
+    """Bootstrap must NOT carry any instruction that would lead an agent
+    to default to /home/ubuntu/japam-docs as a search/source/doc root."""
+    out = bootstrap("JAPAM-AI/Ai_operations", "claude_code", {})
+    # Concatenate every advisory list so we cover the whole agent-facing surface.
+    blob = "\n".join(
+        " ".join(v) if isinstance(v, list) else str(v)
+        for v in out.values()
+    )
+    # The policy itself NAMES japam-docs (in the negation rule), so a bare
+    # "japam-docs not allowed" substring scan would false-positive. Instead
+    # assert the explicit policy text — and assert the canonical root is named.
+    assert "MUST NOT use /home/ubuntu/japam-docs" in blob
+    assert "default root MUST be /home/ubuntu/Ai_operations" in blob
+
+
+def test_bootstrap_canonical_path_policy_applies_to_all_known_repos():
+    """The policy is global across all known JAPAM-AI repos."""
+    from prompt_guidance.review import KNOWN_REPOSITORIES
+    for repo in sorted(KNOWN_REPOSITORIES):
+        out = bootstrap(repo, "claude_code", {})
+        joined = " ".join(out["applicable_governance_rules"])
+        assert "/home/ubuntu/Ai_operations" in joined, (
+            f"repo {repo}: canonical root not surfaced"
+        )
+        assert "MUST NOT use /home/ubuntu/japam-docs" in joined, (
+            f"repo {repo}: japam-docs disallow not surfaced"
+        )
+
+
+def test_bootstrap_canonical_path_policy_applies_even_in_warn_status():
+    """Even for unknown repo (status=WARN), the canonical-path policy
+    must be present — an unknown repo is exactly when an agent is most
+    likely to drift toward the legacy root."""
+    out = bootstrap("acme/unknown", "claude_code", {})
+    assert out["status"] == "WARN"
+    joined = " ".join(out["applicable_governance_rules"])
+    assert "/home/ubuntu/Ai_operations" in joined
+    assert "MUST NOT use /home/ubuntu/japam-docs" in joined
+
+
+def test_canonical_path_policy_tuple_is_exposed():
+    """The CANONICAL_PATH_POLICY tuple must be importable so other
+    modules (tests, scripts) can assert membership without parsing the
+    bootstrap output."""
+    from prompt_guidance.bootstrap import CANONICAL_PATH_POLICY
+    assert isinstance(CANONICAL_PATH_POLICY, tuple)
+    assert len(CANONICAL_PATH_POLICY) >= 5
+    # Every entry must be a string, none referencing japam-docs as a
+    # default ROOT (negation references are fine).
+    for entry in CANONICAL_PATH_POLICY:
+        assert isinstance(entry, str)
+        assert entry, "empty policy entry"

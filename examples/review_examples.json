@@ -188,18 +188,23 @@
       "lane": "claude_code",
       "status": "READY",
       "applicable_governance_rules": [
-        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "Advisory only — outputs from prompt_guidance never block any pipeline.",
         "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
-        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
-        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Stateless — no DB, no file logging, no telemetry from this package.",
+        "Deterministic — same input → byte-identical output.",
         "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
-        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
-        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+        "Tolerance — malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting.",
+        "Canonical orchestration root is /home/ubuntu/Ai_operations; canonical governance-automation root is JAPAM-AI/governance.",
+        "Agents MUST NOT use /home/ubuntu/japam-docs as a search root, source root, implementation root, or documentation root. It is frozen legacy.",
+        "/home/ubuntu/japam-docs may be referenced only as historical evidence, rollback archive, decommissioned source evidence, or an explicitly named LEGACY_RUNTIME_EXCEPTION.",
+        "When using Claw-MCP filesystem.search / code.grep / filesystem.list / filesystem.read for AI-Ops governance or orchestration work, the default root MUST be /home/ubuntu/Ai_operations.",
+        "If an exception requires reading /home/ubuntu/japam-docs, state the exception explicitly and cite the canonical Ai_operations document that permits it (typically docs/governance/SOURCE_OF_TRUTH.md, an ADR under docs/adr/, or a legacy-pointers/*.DEPRECATED.md file)."
       ],
       "task_structure_expectations": [
         "Declare task_class explicitly for scheduled / task / agent / pr work.",
         "Known contract task_classes: ['codex_qc_review', 'deep', 'deep_batch', 'restricted', 'simple', 'standard'].",
-        "Observed-but-not-yet-in-contract: ['chat'] \u2014 these DRIFT from the contract enum until ADR + schema lands.",
+        "Observed-but-not-yet-in-contract: ['chat'] — these DRIFT from the contract enum until ADR + schema lands.",
         "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
         "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos.",
         "task_id: governed claude_code lane uses cc-* prefix (8-char hex); worker uses lt-*; codex uses lt-qc-*."
@@ -216,10 +221,10 @@
         "Long-running claude_code work hits the DurableQueue 10-minute lease cap; split into continuation cc-* tasks."
       ],
       "mirror_update_expectations": [
-        "task_class drift (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2192 mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
+        "task_class drift (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) → mirror PR in JAPAM-AI/Ai_operations contracts/schemas/task.schema.json.",
         "Schema-touching changes likely need a follow-up ADR + schema bump in Ai_operations contracts/.",
-        "Worker / orchestration / governance-doc changes \u2192 mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
-        "Cross-repo work (other JAPAM-AI repos) \u2192 consult prompt_guidance.review's recommended_repositories field."
+        "Worker / orchestration / governance-doc changes → mirror updates per area; consult prompt_guidance.review for the symbolic mirror_targets.",
+        "Cross-repo work (other JAPAM-AI repos) → consult prompt_guidance.review's recommended_repositories field."
       ],
       "when_to_call_review": [
         "Before opening any PR.",
@@ -231,9 +236,9 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
-        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
-        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) — open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set — escalate; do not invent.",
+        "If the planned change crosses three or more repositories — escalate before opening any PR."
       ],
       "non_goals": [
         "No blocking behavior.",
@@ -259,13 +264,18 @@
       "lane": "claude_code",
       "status": "WARN",
       "applicable_governance_rules": [
-        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "Advisory only — outputs from prompt_guidance never block any pipeline.",
         "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
-        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
-        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Stateless — no DB, no file logging, no telemetry from this package.",
+        "Deterministic — same input → byte-identical output.",
         "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
-        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
-        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+        "Tolerance — malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting.",
+        "Canonical orchestration root is /home/ubuntu/Ai_operations; canonical governance-automation root is JAPAM-AI/governance.",
+        "Agents MUST NOT use /home/ubuntu/japam-docs as a search root, source root, implementation root, or documentation root. It is frozen legacy.",
+        "/home/ubuntu/japam-docs may be referenced only as historical evidence, rollback archive, decommissioned source evidence, or an explicitly named LEGACY_RUNTIME_EXCEPTION.",
+        "When using Claw-MCP filesystem.search / code.grep / filesystem.list / filesystem.read for AI-Ops governance or orchestration work, the default root MUST be /home/ubuntu/Ai_operations.",
+        "If an exception requires reading /home/ubuntu/japam-docs, state the exception explicitly and cite the canonical Ai_operations document that permits it (typically docs/governance/SOURCE_OF_TRUTH.md, an ADR under docs/adr/, or a legacy-pointers/*.DEPRECATED.md file)."
       ],
       "task_structure_expectations": [
         "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
@@ -283,7 +293,7 @@
       ],
       "mirror_update_expectations": [
         "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
-        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+        "Mirror updates are advisory; the tool does not open follow-up PRs — an agent or operator does."
       ],
       "when_to_call_review": [
         "Before opening any PR.",
@@ -293,9 +303,9 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
-        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
-        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) — open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set — escalate; do not invent.",
+        "If the planned change crosses three or more repositories — escalate before opening any PR."
       ],
       "non_goals": [
         "No blocking behavior.",
@@ -321,18 +331,23 @@
       "lane": "schedule_v2",
       "status": "WARN",
       "applicable_governance_rules": [
-        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "Advisory only — outputs from prompt_guidance never block any pipeline.",
         "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
-        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
-        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Stateless — no DB, no file logging, no telemetry from this package.",
+        "Deterministic — same input → byte-identical output.",
         "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
-        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
-        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+        "Tolerance — malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting.",
+        "Canonical orchestration root is /home/ubuntu/Ai_operations; canonical governance-automation root is JAPAM-AI/governance.",
+        "Agents MUST NOT use /home/ubuntu/japam-docs as a search root, source root, implementation root, or documentation root. It is frozen legacy.",
+        "/home/ubuntu/japam-docs may be referenced only as historical evidence, rollback archive, decommissioned source evidence, or an explicitly named LEGACY_RUNTIME_EXCEPTION.",
+        "When using Claw-MCP filesystem.search / code.grep / filesystem.list / filesystem.read for AI-Ops governance or orchestration work, the default root MUST be /home/ubuntu/Ai_operations.",
+        "If an exception requires reading /home/ubuntu/japam-docs, state the exception explicitly and cite the canonical Ai_operations document that permits it (typically docs/governance/SOURCE_OF_TRUTH.md, an ADR under docs/adr/, or a legacy-pointers/*.DEPRECATED.md file)."
       ],
       "task_structure_expectations": [
         "Declare task_class, side_effects, and declared_impact in the task envelope.",
         "AI_Operation contract task_classes (for cross-repo work that touches orchestration): ['codex_qc_review', 'deep', 'deep_batch', 'restricted', 'simple', 'standard'].",
-        "Observed-but-not-yet-in-contract: ['chat'] \u2014 these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
+        "Observed-but-not-yet-in-contract: ['chat'] — these still DRIFT from the contract enum until ADR + schema lands in JAPAM-AI/Ai_operations.",
         "side_effects must list all material effects: filesystem, database, network, email, github, sharepoint, browser, secrets, none.",
         "declared_impact should pre-flag known governance areas: ai_operation, orchestration, workers, task_schema, mcp_tools, git_rules, governance_docs, other_repos."
       ],
@@ -350,7 +365,7 @@
       ],
       "mirror_update_expectations": [
         "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
-        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+        "Mirror updates are advisory; the tool does not open follow-up PRs — an agent or operator does."
       ],
       "when_to_call_review": [
         "Before opening any PR.",
@@ -360,9 +375,9 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
-        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
-        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) — open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set — escalate; do not invent.",
+        "If the planned change crosses three or more repositories — escalate before opening any PR."
       ],
       "non_goals": [
         "No blocking behavior.",
@@ -388,13 +403,18 @@
       "lane": "",
       "status": "WARN",
       "applicable_governance_rules": [
-        "Advisory only \u2014 outputs from prompt_guidance never block any pipeline.",
+        "Advisory only — outputs from prompt_guidance never block any pipeline.",
         "AI_Operation does NOT depend on JAPAM-AI/governance at runtime.",
-        "Stateless \u2014 no DB, no file logging, no telemetry from this package.",
-        "Deterministic \u2014 same input \u2192 byte-identical output.",
+        "Stateless — no DB, no file logging, no telemetry from this package.",
+        "Deterministic — same input → byte-identical output.",
         "Closed-set vocabularies; new values require ADR + schema bump in JAPAM-AI/governance.",
-        "Tolerance \u2014 malformed input must produce status=WARN, never raise.",
-        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting."
+        "Tolerance — malformed input must produce status=WARN, never raise.",
+        "PR bot is a backstop, not the primary entry point. Call bootstrap + review BEFORE acting.",
+        "Canonical orchestration root is /home/ubuntu/Ai_operations; canonical governance-automation root is JAPAM-AI/governance.",
+        "Agents MUST NOT use /home/ubuntu/japam-docs as a search root, source root, implementation root, or documentation root. It is frozen legacy.",
+        "/home/ubuntu/japam-docs may be referenced only as historical evidence, rollback archive, decommissioned source evidence, or an explicitly named LEGACY_RUNTIME_EXCEPTION.",
+        "When using Claw-MCP filesystem.search / code.grep / filesystem.list / filesystem.read for AI-Ops governance or orchestration work, the default root MUST be /home/ubuntu/Ai_operations.",
+        "If an exception requires reading /home/ubuntu/japam-docs, state the exception explicitly and cite the canonical Ai_operations document that permits it (typically docs/governance/SOURCE_OF_TRUTH.md, an ADR under docs/adr/, or a legacy-pointers/*.DEPRECATED.md file)."
       ],
       "task_structure_expectations": [
         "Repo not in JAPAM-AI known set; verify the repo string before proceeding.",
@@ -413,7 +433,7 @@
       ],
       "mirror_update_expectations": [
         "Run prompt_guidance.review on the planned change to get symbolic mirror_targets and recommended_repositories.",
-        "Mirror updates are advisory; the tool does not open follow-up PRs \u2014 an agent or operator does."
+        "Mirror updates are advisory; the tool does not open follow-up PRs — an agent or operator does."
       ],
       "when_to_call_review": [
         "Before opening any PR.",
@@ -423,9 +443,9 @@
       "when_to_escalate": [
         "If review returns risk=HIGH and you do not have explicit operator approval.",
         "If review returns missing_fields you cannot fill from the task context.",
-        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES \u2014 currently {chat}) \u2014 open separate alignment PR; do not auto-fix.",
-        "If you discover a new repo, contract surface, or vocabulary not in the closed set \u2014 escalate; do not invent.",
-        "If the planned change crosses three or more repositories \u2014 escalate before opening any PR."
+        "If task_class drift is required (any value in EXTENDED_BRIEF_CLASSES — currently {chat}) — open separate alignment PR; do not auto-fix.",
+        "If you discover a new repo, contract surface, or vocabulary not in the closed set — escalate; do not invent.",
+        "If the planned change crosses three or more repositories — escalate before opening any PR."
       ],
       "non_goals": [
         "No blocking behavior.",
