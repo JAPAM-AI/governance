@@ -177,3 +177,7 @@ Major policy decisions that affect this repo's outputs live in `JAPAM-AI/Ai_oper
 - **External workers** (laptop-primary, win-primary; execution-location variants of the worker lane) — `Ai_operations/docs/runbooks/external_workers.md`.
 
 Updates to those policies happen in `Ai_operations`; mirror them here only when they affect the bootstrap output contract.
+
+### Agent role policies (mirror)
+
+Focused role-boundary summaries for ChatGPT (advisory-first, read-only by default) and Claude AI / Claude Code (execution-capable when authorized) live at `docs/agent-roles/` in this repo. They mirror the canonical files at `JAPAM-AI/Ai_operations/docs/governance/agent-roles/`; on any conflict, the `Ai_operations` versions win. See `docs/agent-roles/README.md` for the index. These role files are convenience entry points for advisory bootstrap and operator-paste workflows — they do not redefine policy.
