@@ -16,11 +16,16 @@ Product / orchestration repos should reference governance, not duplicate it. Gov
 
 ## Roles addressed
 
-- **Claude Code** — engineering, scripts, builds, fixes
-- **OpenAI agents** — analysis, drafting
-- **Claude AI** — planning, routing, summarization
-- **Codex QC** — static analysis review
-- **Other agents / schedulers** — anything that writes to a queue or repo
+- **Claude Code** — engineering, scripts, builds, fixes (the designated execution / build / maintenance lane in `Ai_operations`)
+- **OpenAI agents** (via gateway-API shim) — read-only advisory by default; dispatch only with `OPERATOR_APPROVAL` token per `Ai_operations/docs/governance/EXECUTION_AUTHORITY_POLICY.md`
+- **Claude AI** (web/desktop UI) — planning, routing, summarization; no orchestration write authority
+- **Codex QC** — static-analysis review; `never_authoritative=true`; verdicts are advisory per `Ai_operations/docs/architecture/advisory_shim.md`
+- **CTO workers** (`cto-worker-family`) — `lt-*` worker-lane executors; governance / routing / execution gate
+- **External workers** (`ext-laptop-primary`, `ext-win-primary`) — execution-location variants of the worker lane, **same** governance/audit semantics, host-specific capability boundaries per `Ai_operations/docs/runbooks/external_workers.md`
+- **Managed agents** (Anthropic Agents / OpenAI Assistants via `packages/managed_agent_shim/`) — governed workbench / orchestration interface, **NOT** a raw execution lane. Submitter identity `vendor_shim_<vendor>`. Two-phase dispatch: vendor agents propose, operator submits. See `Ai_operations/docs/adr/0032-managed-agent-shim.md`.
+- **Other agents / schedulers** — anything that writes to a queue or repo binds to this contract
+
+The full role-model table (with submitter identities and permitted operations) is in `Ai_operations/docs/governance/OPERATING_MODEL.md` § The full agent role model. Bootstrap's `applicable_governance_rules` output reflects the same model.
 
 ## Before you act — two-step pattern
 

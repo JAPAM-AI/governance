@@ -20,7 +20,15 @@ The original Phase 3 plan included a stdio MCP server in `governance/mcp/server.
 
 ### External-worker routing — documentation only
 
-Routing rules for `ext-lapt-*` and `ext-winp-*` workers live in `Ai_operations/docs/architecture/governed_lane.md` and the policy_engine's `_WRK_PREFIX_CLASSES` allowlist. Governance does not own this routing; the bootstrap output points agents at AI_Operation paths for worker dispatch.
+Routing rules for `ext-lapt-*` and `ext-winp-*` workers live in `Ai_operations/docs/runbooks/external_workers.md` (canonical runbook added 2026-05-15) and the policy_engine's `_WRK_PREFIX_CLASSES` allowlist. Governance does not own this routing; the bootstrap output points agents at the `Ai_operations` runbook + ADR 0003 for the binding governance.
+
+### Managed-agent shim — advisory relationship
+
+`Ai_operations/packages/managed_agent_shim/` (shipped in `Ai_operations` PR #133, retro-documented in ADR 0032) is the canonical boundary for vendor managed-agent surfaces (Anthropic Agents, OpenAI Assistants) to operate under AI_Operations governance. The shim's submitter identity is `vendor_shim_<vendor>` — deliberately outside `execution_authority._FORBIDDEN_SUBMITTER_PATTERNS`.
+
+Governance treats managed agents as an **advisory** surface: bootstrap may add a managed-agent advisory to `applicable_governance_rules` once live wiring proceeds in coo-router. Today, the shim ships in observe mode (no orchestration component routes through it).
+
+**To act**: nothing required in this repo until live wiring. When that happens, mirror the advisory under `Roles addressed` in `AGENTS.md` (already updated 2026-05-15) and add a bootstrap rule via a small `prompt_guidance` PR.
 
 **To formalize**: a contract schema for cross-machine routing could move some of this into `contracts/`. Out of scope for the current rollout.
 
