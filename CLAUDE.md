@@ -4,6 +4,36 @@
 
 The rules below are non-negotiable. They were established after a 2026-05-12 PII exposure incident in `JAPAM-AI/taxops` — see that repo's `SECURITY.md` for incident history.
 
+## Canonical Governance
+
+`/home/ubuntu/Ai_operations` is the canonical source-of-truth for governance, execution discipline, branching, QC, escalation, operator approval, ADR interpretation, deployment discipline, repository policy, workflow rules, handoff procedure, task registration, lane routing, security policy, and PII handling.
+
+If unsure how to proceed in any of those areas, stop and read the canonical Ai_operations documents before acting — do not improvise from memory.
+
+Start with (absolute paths):
+
+- `/home/ubuntu/Ai_operations/CLAUDE.md` — master orchestration rules
+- `/home/ubuntu/Ai_operations/CONTRIBUTING.md` — branch + PR conventions
+- `/home/ubuntu/Ai_operations/docs/governance/SOURCE_OF_TRUTH.md` — canonical path policy
+- `/home/ubuntu/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md` — Codex QC trace rules
+- `/home/ubuntu/Ai_operations/docs/governance/EXECUTION_AUTHORITY_POLICY.md` — who may execute what
+- `/home/ubuntu/Ai_operations/docs/adr/0029-ai-ops-path-ambiguity-elimination.md` — canonical-path ADR
+- `/home/ubuntu/Ai_operations/docs/adr/0030-workspace-discipline-policy.md` — where agents may WRITE
+- `/home/ubuntu/ops/EXECUTION_PROTOCOL.md` — operator-workspace execution discipline
+
+This repo (`JAPAM-AI/governance`) is **advisory-only**; it does not host runtime orchestration. Its outputs (`prompt_guidance.bootstrap`, `prompt_guidance.review`, the MCP wrapper) reflect orchestration decisions made in `/home/ubuntu/Ai_operations/` — never modify policy unilaterally here.
+
+### Authority hierarchy
+
+When two sources disagree, the earlier-numbered source wins:
+
+1. **Operator instructions** (this session — highest)
+2. **`/home/ubuntu/Ai_operations` canonical governance**
+3. **Repo-local CLAUDE.md** repo-specific rules (this file)
+4. **Task-local instructions** (kickoff prompts, register payloads — lowest)
+
+Repo-local CLAUDE.md files may define repo-specific behavior **only**. They do not silently override canonical Ai_operations governance unless explicitly authorized by operator instruction or canonical ADR.
+
 ---
 
 ## Hard rules — same as global
