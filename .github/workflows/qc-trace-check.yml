@@ -1,0 +1,105 @@
+name: QC Trace Check
+
+# Discipline Upgrade #5 (PR 8 / ADR 0018):
+# Every PR body MUST reference a Codex QC trace ID matching `lt-qc-[a-z0-9-]+`.
+# This check fails closed if the reference is absent.
+#
+# See JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md § Upgrade 5.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  pull-requests: read
+
+jobs:
+  qc-trace-check:
+    name: Verify Codex QC trace ID present in PR body
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          # Pattern: lt-qc- followed by at least 2 lowercase-hex / digit /
+          # dash chars. Matches real QC task IDs (8-char lowercase hex from
+          # uuid4().hex[:8] — e.g. lt-qc-d07c7322, lt-qc-601d9ad8) AND the
+          # documented emergency marker lt-qc-na.
+          pattern='lt-qc-[a-z0-9-]{2,}'
+          if printf '%s' "${PR_BODY:-}" | grep -E -q "$pattern"; then
+            match=$(printf '%s' "$PR_BODY" | grep -E -o "$pattern" | head -1)
+            echo "PASS — Codex QC trace ID found: $match"
+            # Special-case the documented emergency exemption (lowercase 'na').
+            if [[ "$match" == "lt-qc-na" ]]; then
+              if printf '%s' "$PR_BODY" | grep -q "EMERGENCY_NO_QC"; then
+                echo "Emergency exemption acknowledged (EMERGENCY_NO_QC marker present)."
+                exit 0
+              else
+                echo "::error::lt-qc-na used without the EMERGENCY_NO_QC marker."
+                echo "If this is a genuine emergency, add the EMERGENCY_NO_QC marker"
+                echo "to the PR body's 'QC findings classification' section per"
+                echo "JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md § Upgrade 5."
+                exit 1
+              fi
+            fi
+            # ---- Discipline Upgrade #6: mandatory Codex QC loop fields ----
+            # (normal path only — the lt-qc-na emergency path exited above.)
+            # Require an explicit cycle count: a digit, not the "___" placeholder.
+            if ! printf '%s' "$PR_BODY" | grep -Eq 'Codex QC cycles run:[[:space:]]*[0-9]'; then
+              echo "::error::Missing 'Codex QC cycles run: <number>' (Upgrade 6)."
+              echo "Fill in the Codex QC loop section per"
+              echo "JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md § Upgrade 6."
+              exit 1
+            fi
+            # The loop must be closed out: either operator-gated, or converged
+            # with zero open real defects WITHIN the canonical cap (1-4 cycles).
+            # Patterns are anchored to the field label so template guidance text
+            # cannot satisfy them.
+            # operator-gated is the documented path for anything beyond max 4
+            # cycles, so it passes regardless of the cycle count.
+            if printf '%s' "$PR_BODY" | grep -Eqi 'Convergence reached:[[:space:]]*operator-gated'; then
+              echo "PASS — Codex QC loop is operator-gated."
+              exit 0
+            fi
+            # Extract the cycle count (digit guaranteed present by the check above;
+            # || true keeps the pipeline from tripping set -e / pipefail).
+            cycles=$(printf '%s' "$PR_BODY" \
+              | grep -Eio 'Codex QC cycles run:[[:space:]]*[0-9]+' \
+              | grep -Eo '[0-9]+' | head -1 || true)
+            if printf '%s' "$PR_BODY" | grep -Eqi 'Convergence reached:[[:space:]]*yes' \
+               && printf '%s' "$PR_BODY" | grep -Eq 'Open real Codex defects:[[:space:]]*0([^0-9]|$)'; then
+              if [ -n "$cycles" ] && [ "$cycles" -ge 1 ] && [ "$cycles" -le 4 ]; then
+                echo "PASS — Codex QC loop converged in $cycles cycle(s) with 0 open real defects."
+                exit 0
+              fi
+              echo "::error::Convergence claimed with cycle count '$cycles', outside the"
+              echo "canonical 1-4 range (Upgrade 6: target 2, max 4 without operator)."
+              echo "Beyond 4 cycles requires 'Convergence reached: operator-gated'."
+              echo "See JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md § Upgrade 6."
+              exit 1
+            fi
+            echo "::error::Codex QC loop is not closed out (Upgrade 6)."
+            echo "Set 'Convergence reached: yes' (with 1-4 cycles) together with"
+            echo "'Open real Codex defects: 0', or mark"
+            echo "'Convergence reached: operator-gated'. See"
+            echo "JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md § Upgrade 6."
+            exit 1
+          fi
+          echo "::error::PR body is missing a Codex QC trace ID."
+          echo ""
+          echo "Discipline Upgrade #5 (PR 8 / ADR 0018) requires every PR body"
+          echo "to reference the Codex QC review that gated the change."
+          echo ""
+          echo "Required format anywhere in the PR body:"
+          echo "  Codex QC task: lt-qc-XXXXXXXX (verdict: ...)"
+          echo ""
+          echo "If this PR genuinely cannot have a Codex QC, use the documented"
+          echo "emergency marker (see JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md"
+          echo "§ Upgrade 5)."
+          echo ""
+          echo "See JAPAM-AI/Ai_operations/docs/governance/PR_DISCIPLINE_UPGRADES.md for full details."
+          exit 1

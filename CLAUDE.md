@@ -181,3 +181,12 @@ Updates to those policies happen in `Ai_operations`; mirror them here only when 
 ### Agent role policies (mirror)
 
 Focused role-boundary summaries for ChatGPT (advisory-first, read-only by default) and Claude AI / Claude Code (execution-capable when authorized) live at `docs/agent-roles/` in this repo. They mirror the canonical files at `JAPAM-AI/Ai_operations/docs/governance/agent-roles/`; on any conflict, the `Ai_operations` versions win. See `docs/agent-roles/README.md` for the index. These role files are convenience entry points for advisory bootstrap and operator-paste workflows — they do not redefine policy.
+
+## Mandatory Codex QC loop (canonical: Ai_operations)
+
+Governed Claude Code work must follow the mandatory Codex QC **loop** defined in
+`JAPAM-AI/Ai_operations` governance (`docs/governance/PR_DISCIPLINE_UPGRADES.md`
+§ Upgrade 6). Do not mark governed work complete with only a QC token: read the
+actual Codex findings, fix every real defect, re-run Codex to verify closure, and
+reach convergence or an operator gate (target 2 cycles, max 4 without operator,
+then operator-gate). The policy text stays canonical in `Ai_operations`.
